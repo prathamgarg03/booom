@@ -1,5 +1,5 @@
 import { fetchQuery } from "convex/nextjs";
-import { api } from "../../../../convex/_generated/api";
+import { api } from "@/lib/convex-api";
 
 export async function getBlogIndex(siteSlug: string) {
   return await fetchQuery(api.public.blogIndex, { siteSlug });

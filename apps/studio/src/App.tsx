@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Doc, Id } from "../../../convex/_generated/dataModel";
 import {
   Authenticated,
   AuthLoading,
@@ -8,7 +7,7 @@ import {
   useQuery,
 } from "convex/react";
 import { SignInButton, UserButton, useUser } from "@clerk/react";
-import { api } from "../../../convex/_generated/api";
+import { api, type Id, type PostRecord } from "./lib/convex-api";
 import "./App.css";
 
 function makeSlug(input: string) {
@@ -167,7 +166,7 @@ function Workspace() {
     setEditorState(emptyEditorState);
   }
 
-  function loadPostIntoEditor(post: Doc<"posts">) {
+  function loadPostIntoEditor(post: PostRecord) {
     setSelectedPostId(post._id);
     setEditorState({
       title: post.title,
