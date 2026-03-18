@@ -1,7 +1,45 @@
+import type { Doc, Id } from "./_generated/dataModel";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireCurrentUser } from "./lib/auth";
 import { assertValidSlug, normalizeSlug } from "./lib/slugs";
+
+type ReadWriteCtx = MutationCtx | QueryCtx;
+
+async function requireOwnedSiteOrThrow(
+  ctx: ReadWriteCtx,
+  userId: Id<"users">,
+  siteId: Id<"sites">,
+): Promise<Doc<"sites">> {
+  const site = await ctx.db.get(siteId);
+
+  if (!site || site.ownerId !== userId) {
+    throw new Error("Not authorized to write to this site");
+  }
+
+  return site;
+}
+
+async function requireOwnedPostOrThrow(
+  ctx: ReadWriteCtx,
+  userId: Id<"users">,
+  postId: Id<"posts">,
+): Promise<{ post: Doc<"posts">; site: Doc<"sites"> }> {
+  const post = await ctx.db.get(postId);
+
+  if (!post) {
+    throw new Error("Post not found");
+  }
+
+  const site = await ctx.db.get(post.siteId);
+
+  if (!site || site.ownerId !== userId) {
+    throw new Error("Not authorized to modify this post");
+  }
+
+  return { post, site };
+}
 
 export const createDraft = mutation({
   args: {
@@ -13,11 +51,7 @@ export const createDraft = mutation({
   },
   handler: async (ctx, args) => {
     const { user } = await requireCurrentUser(ctx);
-    const site = await ctx.db.get(args.siteId);
-
-    if (!site || site.ownerId !== user._id) {
-      throw new Error("Not authorized to write to this site");
-    }
+    await requireOwnedSiteOrThrow(ctx, user._id, args.siteId);
 
     const title = args.title.trim();
     const slug = normalizeSlug(args.slug);
@@ -61,27 +95,77 @@ export const createDraft = mutation({
   },
 });
 
+export const updateDraft = mutation({
+  args: {
+    postId: v.id("posts"),
+    title: v.string(),
+    slug: v.string(),
+    excerpt: v.optional(v.string()),
+    body: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { user } = await requireCurrentUser(ctx);
+    const { post, site } = await requireOwnedPostOrThrow(ctx, user._id, args.postId);
+    const title = args.title.trim();
+    const slug = normalizeSlug(args.slug);
+    const excerpt = args.excerpt?.trim() || undefined;
+    const body = args.body.trim();
+
+    if (!title) {
+      throw new Error("Post title is required");
+    }
+
+    if (!body) {
+      throw new Error("Post body is required");
+    }
+
+    assertValidSlug(slug, "Post slug");
+
+    const existing = await ctx.db
+      .query("posts")
+      .withIndex("by_site_id_slug", (q) => q.eq("siteId", site._id).eq("slug", slug))
+      .unique();
+
+    if (existing && existing._id !== post._id) {
+      throw new Error("That post slug is already used for this site");
+    }
+
+    await ctx.db.patch(post._id, {
+      title,
+      slug,
+      excerpt,
+      body,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
 export const publish = mutation({
   args: {
     postId: v.id("posts"),
   },
   handler: async (ctx, args) => {
     const { user } = await requireCurrentUser(ctx);
-    const post = await ctx.db.get(args.postId);
-
-    if (!post) {
-      throw new Error("Post not found");
-    }
-
-    const site = await ctx.db.get(post.siteId);
-
-    if (!site || site.ownerId !== user._id) {
-      throw new Error("Not authorized to publish this post");
-    }
+    const { post } = await requireOwnedPostOrThrow(ctx, user._id, args.postId);
 
     await ctx.db.patch(post._id, {
       status: "published",
       publishedAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const unpublish = mutation({
+  args: {
+    postId: v.id("posts"),
+  },
+  handler: async (ctx, args) => {
+    const { user } = await requireCurrentUser(ctx);
+    const { post } = await requireOwnedPostOrThrow(ctx, user._id, args.postId);
+
+    await ctx.db.patch(post._id, {
+      status: "draft",
       updatedAt: Date.now(),
     });
   },
@@ -93,16 +177,18 @@ export const listBySite = query({
   },
   handler: async (ctx, args) => {
     const { user } = await requireCurrentUser(ctx);
-    const site = await ctx.db.get(args.siteId);
+    await requireOwnedSiteOrThrow(ctx, user._id, args.siteId);
 
-    if (!site || site.ownerId !== user._id) {
-      throw new Error("Not authorized to read this site");
-    }
-
-    return await ctx.db
+    const posts = await ctx.db
       .query("posts")
       .withIndex("by_site_id", (q) => q.eq("siteId", args.siteId))
       .collect();
+
+    return posts.sort((a, b) => {
+      const aTime = a.updatedAt ?? a.createdAt;
+      const bTime = b.updatedAt ?? b.createdAt;
+      return bTime - aTime;
+    });
   },
 });
 

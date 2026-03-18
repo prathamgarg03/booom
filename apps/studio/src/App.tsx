@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { Doc, Id } from "../../../convex/_generated/dataModel";
 import {
   Authenticated,
   AuthLoading,
@@ -19,66 +20,99 @@ function makeSlug(input: string) {
     .replace(/-{2,}/g, "-");
 }
 
+function formatDate(timestamp?: number) {
+  if (!timestamp) {
+    return "Not published";
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(timestamp);
+}
+
 function SignedOutView() {
   return (
     <section className="auth-panel">
       <p className="eyebrow">Booom Studio</p>
-      <h1>Publish developer blogs without turning every launch into a CMS project.</h1>
+      <h1>Write once. Ship everywhere with a tiny embed.</h1>
       <p className="lede">
-        This first checkpoint wires Clerk, Convex, and the studio shell together.
-        Sign in to create your site record and reserve your public blog slug.
+        The studio manages your blog content, publishing state, and future embed
+        output so your product site stays lightweight.
       </p>
       <div className="cta-row">
         <SignInButton mode="modal">
-          <button className="primary-button">Sign in to start</button>
+          <button className="primary-button">Sign in to continue</button>
         </SignInButton>
-      </div>
-      <div className="feature-grid">
-        <article>
-          <span>01</span>
-          <h2>Managed writing flow</h2>
-          <p>Draft in Booom, publish from Booom, and keep your product site clean.</p>
-        </article>
-        <article>
-          <span>02</span>
-          <h2>One-line embed goal</h2>
-          <p>Your canonical posts live on Booom, while your site only needs a tiny script.</p>
-        </article>
-        <article>
-          <span>03</span>
-          <h2>Open-source path</h2>
-          <p>This repo stays structured so later self-hosting doesn&apos;t become a rewrite.</p>
-        </article>
       </div>
     </section>
   );
 }
 
+type NoticeState = {
+  error: string | null;
+  success: string | null;
+};
+
+type EditorState = {
+  title: string;
+  slug: string;
+  excerpt: string;
+  body: string;
+  slugTouched: boolean;
+};
+
+const emptyEditorState: EditorState = {
+  title: "",
+  slug: "",
+  excerpt: "",
+  body: "",
+  slugTouched: false,
+};
+
 function Workspace() {
   const { user: clerkUser } = useUser();
   const ensureCurrentUser = useMutation(api.users.ensureCurrentUser);
   const createSite = useMutation(api.sites.create);
+  const createDraft = useMutation(api.posts.createDraft);
+  const updateDraft = useMutation(api.posts.updateDraft);
+  const publishPost = useMutation(api.posts.publish);
+  const unpublishPost = useMutation(api.posts.unpublish);
+
   const viewer = useQuery(api.users.viewer);
   const sites = useQuery(api.sites.listMine, viewer ? {} : "skip");
+  const site = sites?.[0] ?? null;
+  const posts = useQuery(api.posts.listBySite, site ? { siteId: site._id } : "skip");
 
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [description, setDescription] = useState("");
-  const [slugTouched, setSlugTouched] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [siteName, setSiteName] = useState("");
+  const [siteSlug, setSiteSlug] = useState("");
+  const [siteDescription, setSiteDescription] = useState("");
+  const [siteSlugTouched, setSiteSlugTouched] = useState(false);
+
+  const [editorState, setEditorState] = useState<EditorState>(emptyEditorState);
+  const [selectedPostId, setSelectedPostId] = useState<Id<"posts"> | null>(null);
+  const [notice, setNotice] = useState<NoticeState>({ error: null, success: null });
+  const [isSavingSite, setIsSavingSite] = useState(false);
+  const [isSavingPost, setIsSavingPost] = useState(false);
+  const [activeActionPostId, setActiveActionPostId] = useState<Id<"posts"> | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
 
   useEffect(() => {
     void ensureCurrentUser().catch((error: unknown) => {
-      const message =
-        error instanceof Error ? error.message : "Could not initialize your user";
-      setErrorMessage(message);
+      setNotice({
+        error:
+          error instanceof Error ? error.message : "Could not initialize your user",
+        success: null,
+      });
     });
   }, [ensureCurrentUser]);
 
-  const site = sites?.[0] ?? null;
+  const selectedPost = useMemo(
+    () => posts?.find((post) => post._id === selectedPostId) ?? null,
+    [posts, selectedPostId],
+  );
+
   const embedSnippet = useMemo(() => {
     if (!site) {
       return "";
@@ -87,29 +121,126 @@ function Workspace() {
     return `<script async src="https://cdn.booom.dev/embed/v1.js" data-site="${site.slug}"></script>`;
   }, [site]);
 
+  const previewUrl = useMemo(() => {
+    if (!site) {
+      return "";
+    }
+
+    const slug = editorState.slug || "post-slug";
+    return `booom.dev/b/${site.slug}/${slug}`;
+  }, [editorState.slug, site]);
+
+  function setError(message: string) {
+    setNotice({ error: message, success: null });
+  }
+
+  function setSuccess(message: string) {
+    setNotice({ error: null, success: message });
+  }
+
+  function resetEditor() {
+    setSelectedPostId(null);
+    setEditorState(emptyEditorState);
+  }
+
+  function loadPostIntoEditor(post: Doc<"posts">) {
+    setSelectedPostId(post._id);
+    setEditorState({
+      title: post.title,
+      slug: post.slug,
+      excerpt: post.excerpt ?? "",
+      body: post.body,
+      slugTouched: true,
+    });
+  }
+
   async function handleCreateSite(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setErrorMessage(null);
-    setStatusMessage(null);
-    setIsSubmitting(true);
+    setNotice({ error: null, success: null });
+    setIsSavingSite(true);
 
     try {
       await createSite({
-        name,
-        slug,
-        description: description || undefined,
+        name: siteName,
+        slug: siteSlug,
+        description: siteDescription || undefined,
       });
-      setStatusMessage("Site created. Next checkpoint: write and publish your first post.");
-      setName("");
-      setSlug("");
-      setDescription("");
-      setSlugTouched(false);
+      setSiteName("");
+      setSiteSlug("");
+      setSiteDescription("");
+      setSiteSlugTouched(false);
+      setSuccess("Site created. You can start drafting posts now.");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Could not create your site";
-      setErrorMessage(message);
+      setError(error instanceof Error ? error.message : "Could not create your site");
     } finally {
-      setIsSubmitting(false);
+      setIsSavingSite(false);
+    }
+  }
+
+  async function handleSavePost(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!site) {
+      setError("Create a site before creating posts.");
+      return;
+    }
+
+    setNotice({ error: null, success: null });
+    setIsSavingPost(true);
+
+    try {
+      if (selectedPostId) {
+        await updateDraft({
+          postId: selectedPostId,
+          title: editorState.title,
+          slug: editorState.slug,
+          excerpt: editorState.excerpt || undefined,
+          body: editorState.body,
+        });
+        setSuccess("Draft updated.");
+      } else {
+        const postId = await createDraft({
+          siteId: site._id,
+          title: editorState.title,
+          slug: editorState.slug,
+          excerpt: editorState.excerpt || undefined,
+          body: editorState.body,
+        });
+        setSelectedPostId(postId);
+        setSuccess("Draft created.");
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Could not save the post");
+    } finally {
+      setIsSavingPost(false);
+    }
+  }
+
+  async function handlePublish(postId: Id<"posts">) {
+    setNotice({ error: null, success: null });
+    setActiveActionPostId(postId);
+
+    try {
+      await publishPost({ postId });
+      setSuccess("Post published.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Could not publish the post");
+    } finally {
+      setActiveActionPostId(null);
+    }
+  }
+
+  async function handleUnpublish(postId: Id<"posts">) {
+    setNotice({ error: null, success: null });
+    setActiveActionPostId(postId);
+
+    try {
+      await unpublishPost({ postId });
+      setSuccess("Post moved back to draft.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Could not unpublish the post");
+    } finally {
+      setActiveActionPostId(null);
     }
   }
 
@@ -123,7 +254,7 @@ function Workspace() {
       setCopyState("copied");
       setTimeout(() => setCopyState("idle"), 1800);
     } catch {
-      setErrorMessage("Could not copy the snippet. You can still copy it manually.");
+      setError("Could not copy the snippet. You can still copy it manually.");
     }
   }
 
@@ -131,112 +262,302 @@ function Workspace() {
     <section className="studio-shell">
       <header className="studio-header">
         <div>
-          <p className="eyebrow">Checkpoint 1</p>
-          <h1>Claim your Booom studio.</h1>
+          <p className="eyebrow">Checkpoint 2</p>
+          <h1>Writing flow</h1>
+          <p className="muted-copy">
+            We&apos;re building the editor, draft flow, and publishing controls before the public blog surface.
+          </p>
         </div>
         <div className="header-actions">
           <div className="identity-chip">
             <span className="identity-label">
-              {clerkUser?.fullName ?? clerkUser?.primaryEmailAddress?.emailAddress ?? "Signed in"}
+              {clerkUser?.fullName ??
+                clerkUser?.primaryEmailAddress?.emailAddress ??
+                "Signed in"}
             </span>
           </div>
           <UserButton />
         </div>
       </header>
 
-      <div className="workspace-grid">
-        <section className="panel intro-panel">
-          <p className="panel-kicker">Why this matters</p>
-          <h2>We&apos;re setting the product spine first.</h2>
-          <p>
-            This checkpoint provisions the authenticated user in Convex, reserves a
-            public site slug, and gives us the base model we&apos;ll build posts and embeds on top of.
-          </p>
-          <ul className="checklist">
-            <li>Clerk identity synced into Convex</li>
-            <li>One site per account for the MVP</li>
-            <li>Public slug reserved for future hosted pages</li>
-          </ul>
-        </section>
+      {notice.error ? <p className="notice notice-error">{notice.error}</p> : null}
+      {notice.success ? <p className="notice notice-success">{notice.success}</p> : null}
 
-        <section className="panel form-panel">
-          <p className="panel-kicker">Site setup</p>
-          <h2>{site ? "Your first site is ready." : "Create your first site."}</h2>
+      {!site ? (
+        <div className="workspace-grid">
+          <section className="panel intro-panel">
+            <p className="panel-kicker">Foundation</p>
+            <h2>Create the home for your posts.</h2>
+            <p>
+              The MVP starts with one site per account. Once the site exists, every
+              post, public URL, and future embed hangs off this slug.
+            </p>
+          </section>
 
-          {errorMessage ? <p className="notice notice-error">{errorMessage}</p> : null}
-          {statusMessage ? <p className="notice notice-success">{statusMessage}</p> : null}
+          <section className="panel form-panel">
+            <p className="panel-kicker">Site setup</p>
+            <h2>Create your first site.</h2>
 
-          {viewer === undefined ? (
-            <p className="muted-copy">Provisioning your Booom profile...</p>
-          ) : site ? (
-            <div className="site-card">
-              <div className="site-card-header">
-                <div>
-                  <h3>{site.name}</h3>
-                  <p className="site-meta">booom.dev/{site.slug}</p>
-                </div>
-                <span className="status-pill">ready</span>
-              </div>
+            {viewer === undefined ? (
+              <p className="muted-copy">Provisioning your Booom profile...</p>
+            ) : (
+              <form className="site-form" onSubmit={handleCreateSite}>
+                <label>
+                  <span>Site name</span>
+                  <input
+                    onChange={(event) => {
+                      const nextName = event.target.value;
+                      setSiteName(nextName);
+                      if (!siteSlugTouched) {
+                        setSiteSlug(makeSlug(nextName));
+                      }
+                    }}
+                    placeholder="Booom Engineering"
+                    value={siteName}
+                  />
+                </label>
+
+                <label>
+                  <span>Site slug</span>
+                  <div className="slug-field">
+                    <span>booom.dev/</span>
+                    <input
+                      onChange={(event) => {
+                        setSiteSlugTouched(true);
+                        setSiteSlug(makeSlug(event.target.value));
+                      }}
+                      placeholder="booom-engineering"
+                      value={siteSlug}
+                    />
+                  </div>
+                </label>
+
+                <label>
+                  <span>Description</span>
+                  <textarea
+                    onChange={(event) => setSiteDescription(event.target.value)}
+                    placeholder="Write concise product notes, devlogs, or release breakdowns."
+                    rows={4}
+                    value={siteDescription}
+                  />
+                </label>
+
+                <button className="primary-button" disabled={isSavingSite} type="submit">
+                  {isSavingSite ? "Creating site..." : "Create site"}
+                </button>
+              </form>
+            )}
+          </section>
+        </div>
+      ) : (
+        <>
+          <section className="overview-grid">
+            <article className="panel summary-card">
+              <p className="panel-kicker">Site</p>
+              <h2>{site.name}</h2>
+              <p className="site-meta">booom.dev/{site.slug}</p>
               {site.description ? <p className="site-description">{site.description}</p> : null}
-              <div className="snippet-box">
+            </article>
+
+            <article className="panel summary-card">
+              <p className="panel-kicker">Editor status</p>
+              <h2>{selectedPost ? "Editing draft" : "New draft"}</h2>
+              <p className="muted-copy">
+                Preview URL: <span className="inline-code">{previewUrl}</span>
+              </p>
+            </article>
+
+            <article className="panel summary-card">
+              <p className="panel-kicker">Future embed</p>
+              <div className="snippet-box compact-snippet">
                 <div className="snippet-row">
-                  <p className="snippet-label">Future one-line embed</p>
+                  <p className="snippet-label">One-line script</p>
                   <button className="ghost-button" onClick={handleCopySnippet} type="button">
                     {copyState === "copied" ? "Copied" : "Copy"}
                   </button>
                 </div>
                 <pre>{embedSnippet}</pre>
               </div>
-            </div>
-          ) : (
-            <form className="site-form" onSubmit={handleCreateSite}>
-              <label>
-                <span>Site name</span>
-                <input
-                  onChange={(event) => {
-                    const nextName = event.target.value;
-                    setName(nextName);
-                    if (!slugTouched) {
-                      setSlug(makeSlug(nextName));
-                    }
-                  }}
-                  placeholder="Booom Engineering"
-                  value={name}
-                />
-              </label>
+            </article>
+          </section>
 
-              <label>
-                <span>Site slug</span>
-                <div className="slug-field">
-                  <span>booom.dev/</span>
+          <div className="editor-grid">
+            <section className="panel form-panel">
+              <div className="editor-header">
+                <div>
+                  <p className="panel-kicker">Editor</p>
+                  <h2>{selectedPost ? "Update post" : "Create a draft"}</h2>
+                </div>
+                {selectedPost ? (
+                  <button className="ghost-button" onClick={resetEditor} type="button">
+                    New draft
+                  </button>
+                ) : null}
+              </div>
+
+              <form className="site-form" onSubmit={handleSavePost}>
+                <label>
+                  <span>Title</span>
                   <input
                     onChange={(event) => {
-                      setSlugTouched(true);
-                      setSlug(makeSlug(event.target.value));
+                      const nextTitle = event.target.value;
+                      setEditorState((current) => ({
+                        ...current,
+                        title: nextTitle,
+                        slug: current.slugTouched ? current.slug : makeSlug(nextTitle),
+                      }));
                     }}
-                    placeholder="booom-engineering"
-                    value={slug}
+                    placeholder="Shipping Booom checkpoint two"
+                    value={editorState.title}
                   />
+                </label>
+
+                <label>
+                  <span>Slug</span>
+                  <div className="slug-field">
+                    <span>/{site.slug}/</span>
+                    <input
+                      onChange={(event) => {
+                        setEditorState((current) => ({
+                          ...current,
+                          slugTouched: true,
+                          slug: makeSlug(event.target.value),
+                        }));
+                      }}
+                      placeholder="shipping-booom-checkpoint-two"
+                      value={editorState.slug}
+                    />
+                  </div>
+                </label>
+
+                <label>
+                  <span>Excerpt</span>
+                  <textarea
+                    onChange={(event) =>
+                      setEditorState((current) => ({
+                        ...current,
+                        excerpt: event.target.value,
+                      }))
+                    }
+                    placeholder="A short summary that will later power cards and embeds."
+                    rows={3}
+                    value={editorState.excerpt}
+                  />
+                </label>
+
+                <label>
+                  <span>Body</span>
+                  <textarea
+                    className="post-body"
+                    onChange={(event) =>
+                      setEditorState((current) => ({
+                        ...current,
+                        body: event.target.value,
+                      }))
+                    }
+                    placeholder={"# Hello world\n\nWrite your post in Markdown.\n\n- Shipping notes\n- Product updates\n- Devlogs"}
+                    rows={14}
+                    value={editorState.body}
+                  />
+                </label>
+
+                <div className="editor-actions">
+                  <button className="primary-button" disabled={isSavingPost} type="submit">
+                    {isSavingPost
+                      ? "Saving..."
+                      : selectedPost
+                        ? "Save changes"
+                        : "Create draft"}
+                  </button>
+                  {selectedPost ? (
+                    selectedPost.status === "published" ? (
+                      <button
+                        className="ghost-button"
+                        onClick={() => void handleUnpublish(selectedPost._id)}
+                        type="button"
+                      >
+                        Move to draft
+                      </button>
+                    ) : (
+                      <button
+                        className="ghost-button"
+                        onClick={() => void handlePublish(selectedPost._id)}
+                        type="button"
+                      >
+                        Publish now
+                      </button>
+                    )
+                  ) : null}
                 </div>
-              </label>
+              </form>
+            </section>
 
-              <label>
-                <span>Description</span>
-                <textarea
-                  onChange={(event) => setDescription(event.target.value)}
-                  placeholder="Write concise product notes, devlogs, or release breakdowns."
-                  rows={4}
-                  value={description}
-                />
-              </label>
+            <section className="panel library-panel">
+              <p className="panel-kicker">Library</p>
+              <h2>Your posts</h2>
+              {posts === undefined ? (
+                <p className="muted-copy">Loading posts...</p>
+              ) : posts.length === 0 ? (
+                <p className="muted-copy">
+                  No posts yet. Create your first draft and we&apos;ll use this list as the basis for the public blog and embed.
+                </p>
+              ) : (
+                <div className="post-list">
+                  {posts.map((post) => {
+                    const isSelected = post._id === selectedPostId;
+                    const isBusy = activeActionPostId === post._id;
 
-              <button className="primary-button" disabled={isSubmitting} type="submit">
-                {isSubmitting ? "Creating site..." : "Create site"}
-              </button>
-            </form>
-          )}
-        </section>
-      </div>
+                    return (
+                      <article className={`post-card${isSelected ? " selected" : ""}`} key={post._id}>
+                        <button
+                          className="post-card-main"
+                          onClick={() => loadPostIntoEditor(post)}
+                          type="button"
+                        >
+                          <div className="post-card-head">
+                            <h3>{post.title}</h3>
+                            <span className={`status-pill ${post.status === "published" ? "published" : ""}`}>
+                              {post.status}
+                            </span>
+                          </div>
+                          <p className="post-slug">/{site.slug}/{post.slug}</p>
+                          <p className="post-excerpt">
+                            {post.excerpt || "No excerpt yet. This will be used in public summaries later."}
+                          </p>
+                          <p className="post-meta">
+                            Updated {formatDate(post.updatedAt)} · Published {formatDate(post.publishedAt)}
+                          </p>
+                        </button>
+                        <div className="post-card-actions">
+                          {post.status === "draft" ? (
+                            <button
+                              className="ghost-button"
+                              disabled={isBusy}
+                              onClick={() => void handlePublish(post._id)}
+                              type="button"
+                            >
+                              {isBusy ? "Publishing..." : "Publish"}
+                            </button>
+                          ) : (
+                            <button
+                              className="ghost-button"
+                              disabled={isBusy}
+                              onClick={() => void handleUnpublish(post._id)}
+                              type="button"
+                            >
+                              {isBusy ? "Updating..." : "Unpublish"}
+                            </button>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </div>
+        </>
+      )}
     </section>
   );
 }
