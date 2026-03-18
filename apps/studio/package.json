@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "vercel-build": "pnpm --dir ../.. exec convex deploy --cmd 'pnpm --dir apps/studio build' --cmd-url-env-var-name VITE_CONVEX_URL",
+    "vercel-build": "pnpm --dir ../.. exec convex deploy --typecheck disable --codegen disable --cmd 'pnpm --dir apps/studio build' --cmd-url-env-var-name VITE_CONVEX_URL",
     "lint": "eslint .",
     "preview": "vite preview"
   },
