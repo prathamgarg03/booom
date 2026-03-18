@@ -166,8 +166,21 @@ export const unpublish = mutation({
 
     await ctx.db.patch(post._id, {
       status: "draft",
+      publishedAt: undefined,
       updatedAt: Date.now(),
     });
+  },
+});
+
+export const remove = mutation({
+  args: {
+    postId: v.id("posts"),
+  },
+  handler: async (ctx, args) => {
+    const { user } = await requireCurrentUser(ctx);
+    const { post } = await requireOwnedPostOrThrow(ctx, user._id, args.postId);
+
+    await ctx.db.delete(post._id);
   },
 });
 

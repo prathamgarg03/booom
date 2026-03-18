@@ -14,12 +14,20 @@ function AuthActions() {
 
   if (userId) {
     return (
-      <a
-        className="rounded-full border border-black/10 bg-white/60 px-5 py-3 text-sm font-medium text-stone-900 transition hover:-translate-y-0.5"
-        href="http://localhost:5173"
-      >
-        Open local studio
-      </a>
+      <>
+        <a
+          className="rounded-full border border-black/10 bg-white/60 px-5 py-3 text-sm font-medium text-stone-900 transition hover:-translate-y-0.5"
+          href="http://localhost:5173"
+        >
+          Open local studio
+        </a>
+        <a
+          className="rounded-full border border-black/10 bg-white/60 px-5 py-3 text-sm font-medium text-stone-900 transition hover:-translate-y-0.5"
+          href="/embed-demo"
+        >
+          Open embed demo
+        </a>
+      </>
     );
   }
 
@@ -40,6 +48,12 @@ function AuthActions() {
         href="http://localhost:5173"
       >
         Explore the studio shell
+      </a>
+      <a
+        className="rounded-full border border-black/10 bg-white/60 px-5 py-3 text-sm font-medium text-stone-900 transition hover:-translate-y-0.5"
+        href="/embed-demo"
+      >
+        Open embed demo
       </a>
     </>
   );
@@ -81,8 +95,8 @@ export default function Home() {
 
           <p className="max-w-2xl text-lg leading-8 text-stone-600">
             Write in Booom, publish from Booom, and embed the output into any site
-            with a single script. This checkpoint ships the authenticated foundation:
-            Clerk, Convex, and a studio that can claim a public site slug.
+            with a single script. The MVP now includes the studio, hosted blog pages,
+            and a live embed demo route for testing the widget against real content.
           </p>
 
           <div className="flex flex-wrap gap-4">

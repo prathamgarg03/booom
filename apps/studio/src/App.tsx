@@ -93,6 +93,7 @@ function Workspace() {
   const updateDraft = useMutation(api.posts.updateDraft);
   const publishPost = useMutation(api.posts.publish);
   const unpublishPost = useMutation(api.posts.unpublish);
+  const deletePost = useMutation(api.posts.remove);
 
   const viewer = useQuery(api.users.viewer);
   const sites = useQuery(api.sites.listMine, viewer ? {} : "skip");
@@ -144,6 +145,14 @@ function Workspace() {
     const slug = editorState.slug || "post-slug";
     return `${getPublicAppUrl()}/b/${site.slug}/${slug}`;
   }, [editorState.slug, site]);
+
+  const embedDemoUrl = useMemo(() => {
+    if (!site) {
+      return "";
+    }
+
+    return `${getPublicAppUrl()}/embed-demo?site=${encodeURIComponent(site.slug)}`;
+  }, [site]);
 
   function setError(message: string) {
     setNotice({ error: message, success: null });
@@ -259,6 +268,40 @@ function Workspace() {
     }
   }
 
+  async function handleDelete(postId: Id<"posts">) {
+    const post = posts?.find((entry) => entry._id === postId);
+
+    if (!post) {
+      setError("That post could not be found.");
+      return;
+    }
+
+    const shouldDelete = window.confirm(
+      `Delete "${post.title}"? This removes it from the studio, public blog, and embed feed.`,
+    );
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    setNotice({ error: null, success: null });
+    setActiveActionPostId(postId);
+
+    try {
+      await deletePost({ postId });
+
+      if (selectedPostId === postId) {
+        resetEditor();
+      }
+
+      setSuccess("Post deleted.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Could not delete the post");
+    } finally {
+      setActiveActionPostId(null);
+    }
+  }
+
   async function handleCopySnippet() {
     if (!embedSnippet) {
       return;
@@ -277,10 +320,10 @@ function Workspace() {
     <section className="studio-shell">
       <header className="studio-header">
         <div>
-          <p className="eyebrow">Checkpoint 2</p>
-          <h1>Writing flow</h1>
+          <p className="eyebrow">Booom Studio</p>
+          <h1>MVP workspace</h1>
           <p className="muted-copy">
-            We&apos;re building the editor, draft flow, and publishing controls before the public blog surface.
+            Manage your site, write posts, publish them, test the hosted blog, and verify the live embed from one place.
           </p>
         </div>
         <div className="header-actions">
@@ -383,13 +426,25 @@ function Workspace() {
             </article>
 
             <article className="panel summary-card">
-              <p className="panel-kicker">Future embed</p>
+              <p className="panel-kicker">Embed</p>
               <div className="snippet-box compact-snippet">
                 <div className="snippet-row">
                   <p className="snippet-label">One-line script</p>
-                  <button className="ghost-button" onClick={handleCopySnippet} type="button">
-                    {copyState === "copied" ? "Copied" : "Copy"}
-                  </button>
+                  <div className="snippet-actions">
+                    {embedDemoUrl ? (
+                      <a
+                        className="ghost-button button-link"
+                        href={embedDemoUrl}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        Open demo
+                      </a>
+                    ) : null}
+                    <button className="ghost-button" onClick={handleCopySnippet} type="button">
+                      {copyState === "copied" ? "Copied" : "Copy"}
+                    </button>
+                  </div>
                 </div>
                 <pre>{embedSnippet}</pre>
               </div>
@@ -477,7 +532,14 @@ function Workspace() {
                 </label>
 
                 <div className="editor-actions">
-                  <button className="primary-button" disabled={isSavingPost} type="submit">
+                  <button
+                    className="primary-button"
+                    disabled={
+                      isSavingPost ||
+                      (selectedPost ? activeActionPostId === selectedPost._id : false)
+                    }
+                    type="submit"
+                  >
                     {isSavingPost
                       ? "Saving..."
                       : selectedPost
@@ -488,20 +550,32 @@ function Workspace() {
                     selectedPost.status === "published" ? (
                       <button
                         className="ghost-button"
+                        disabled={activeActionPostId === selectedPost._id}
                         onClick={() => void handleUnpublish(selectedPost._id)}
                         type="button"
                       >
-                        Move to draft
+                        {activeActionPostId === selectedPost._id ? "Updating..." : "Move to draft"}
                       </button>
                     ) : (
                       <button
                         className="ghost-button"
+                        disabled={activeActionPostId === selectedPost._id}
                         onClick={() => void handlePublish(selectedPost._id)}
                         type="button"
                       >
-                        Publish now
+                        {activeActionPostId === selectedPost._id ? "Publishing..." : "Publish now"}
                       </button>
                     )
+                  ) : null}
+                  {selectedPost ? (
+                    <button
+                      className="ghost-button danger-button"
+                      disabled={activeActionPostId === selectedPost._id}
+                      onClick={() => void handleDelete(selectedPost._id)}
+                      type="button"
+                    >
+                      {activeActionPostId === selectedPost._id ? "Deleting..." : "Delete post"}
+                    </button>
                   ) : null}
                 </div>
               </form>
@@ -563,6 +637,14 @@ function Workspace() {
                               {isBusy ? "Updating..." : "Unpublish"}
                             </button>
                           )}
+                          <button
+                            className="ghost-button danger-button"
+                            disabled={isBusy}
+                            onClick={() => void handleDelete(post._id)}
+                            type="button"
+                          >
+                            {isBusy ? "Working..." : "Delete"}
+                          </button>
                         </div>
                       </article>
                     );

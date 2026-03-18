@@ -125,6 +125,23 @@
   color: var(--ink);
 }
 
+.ghost-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.danger-button {
+  background: rgba(171, 56, 28, 0.12);
+  color: #8f3216;
+}
+
 .feature-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -359,6 +376,13 @@
   gap: 16px;
 }
 
+.snippet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .compact-snippet {
   margin-top: 0;
 }
@@ -494,6 +518,8 @@
 .post-card-actions {
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
   padding: 0 16px 16px;
 }
 
