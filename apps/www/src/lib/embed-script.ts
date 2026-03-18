@@ -132,6 +132,13 @@ export function getEmbedScript() {
     return null;
   }
 
+  function normalizeSite(value) {
+    if (typeof value !== "string") return null;
+    var normalized = value.trim().toLowerCase();
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalized)) return null;
+    return normalized;
+  }
+
   function formatDate(value) {
     if (!value) return "Recently";
     try {
@@ -179,12 +186,6 @@ export function getEmbedScript() {
   var script = getCurrentScript();
   if (!script) return;
 
-  var site = script.dataset.site;
-  if (!site) {
-    console.error("Booom embed requires data-site");
-    return;
-  }
-
   var theme = script.dataset.theme === "dark" ? "dark" : "light";
   var limit = Number.parseInt(script.dataset.limit || "5", 10);
   if (!Number.isFinite(limit) || limit <= 0) limit = 5;
@@ -194,6 +195,14 @@ export function getEmbedScript() {
   mount.dataset.theme = theme;
 
   var root = mount.shadowRoot || mount.attachShadow({ mode: "open" });
+  var site = normalizeSite(script.dataset.site);
+
+  if (!site) {
+    render(root, '<div class="booom-card"><p class="booom-kicker">Booom Embed</p><p class="booom-status">The embed is missing a valid data-site slug.</p></div>');
+    console.error("Booom embed requires a valid data-site slug");
+    return;
+  }
+
   render(root, '<div class="booom-card"><p class="booom-kicker">Booom Embed</p><p class="booom-status">Loading posts...</p></div>');
 
   fetch(origin + "/api/embed/" + encodeURIComponent(site) + "?limit=" + encodeURIComponent(String(limit)), {
@@ -203,10 +212,26 @@ export function getEmbedScript() {
     }
   })
     .then(function (response) {
+      if (response.status === 400) {
+        return { __booomState: "invalid" };
+      }
+      if (response.status === 404) {
+        return { __booomState: "missing" };
+      }
       if (!response.ok) throw new Error("Failed to load posts");
       return response.json();
     })
     .then(function (payload) {
+      if (payload && payload.__booomState === "invalid") {
+        render(root, '<div class="booom-card"><p class="booom-kicker">Booom Embed</p><p class="booom-status">This embed has an invalid site configuration.</p></div>');
+        return;
+      }
+
+      if (payload && payload.__booomState === "missing") {
+        render(root, '<div class="booom-card"><p class="booom-kicker">Booom Embed</p><p class="booom-status">This blog could not be found.</p></div>');
+        return;
+      }
+
       if (!payload || !payload.site) {
         render(root, '<div class="booom-card"><p class="booom-kicker">Booom Embed</p><p class="booom-status">This blog could not be found.</p></div>');
         return;

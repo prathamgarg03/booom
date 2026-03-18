@@ -61,3 +61,42 @@ test("findPublishedPostBySlug normalizes incoming slugs", () => {
 
   assert.equal(result?._id, "published-2");
 });
+
+test("published posts appear in public summaries and page lookups", () => {
+  const publishedOnly = listPublishedPostSummaries(posts);
+  const publishedPost = findPublishedPostBySlug(posts, "published-post");
+
+  assert.deepEqual(
+    publishedOnly.map((post) => post.slug),
+    ["newer-published-post", "published-post"],
+  );
+  assert.equal(publishedPost?.title, "Published post");
+});
+
+test("unpublishing a post removes it from public summaries and post lookups", () => {
+  const unpublishedPosts = posts.map((post) =>
+    post._id === "published-1"
+      ? {
+          ...post,
+          status: "draft" as const,
+          publishedAt: undefined,
+        }
+      : post,
+  );
+
+  const summaries = listPublishedPostSummaries(unpublishedPosts);
+  const singlePost = findPublishedPostBySlug(unpublishedPosts, "published-post");
+
+  assert.equal(summaries.some((post) => post.slug === "published-post"), false);
+  assert.equal(singlePost, null);
+});
+
+test("deleting a post removes it from all public visibility helpers", () => {
+  const remainingPosts = posts.filter((post) => post._id !== "published-2");
+
+  const summaries = listPublishedPostSummaries(remainingPosts);
+  const singlePost = findPublishedPostBySlug(remainingPosts, "newer-published-post");
+
+  assert.equal(summaries.some((post) => post.slug === "newer-published-post"), false);
+  assert.equal(singlePost, null);
+});

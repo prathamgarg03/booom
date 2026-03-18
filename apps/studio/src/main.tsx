@@ -5,23 +5,13 @@ import { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import "./index.css";
 import App from "./App";
+import { studioEnv } from "./lib/env";
 
-const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-const convexUrl = import.meta.env.VITE_CONVEX_URL;
-
-if (!clerkPublishableKey) {
-  throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY");
-}
-
-if (!convexUrl) {
-  throw new Error("Missing VITE_CONVEX_URL");
-}
-
-const convex = new ConvexReactClient(convexUrl);
+const convex = new ConvexReactClient(studioEnv.VITE_CONVEX_URL);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ClerkProvider publishableKey={clerkPublishableKey}>
+    <ClerkProvider publishableKey={studioEnv.VITE_CLERK_PUBLISHABLE_KEY}>
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         <App />
       </ConvexProviderWithClerk>

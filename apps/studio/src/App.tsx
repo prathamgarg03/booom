@@ -8,6 +8,7 @@ import {
 } from "convex/react";
 import { SignInButton, UserButton, useUser } from "@clerk/react";
 import { api, type Id, type PostRecord } from "./lib/convex-api";
+import { studioEnv } from "./lib/env";
 import "./App.css";
 
 function makeSlug(input: string) {
@@ -32,17 +33,35 @@ function formatDate(timestamp?: number) {
 }
 
 function getPublicAppUrl() {
-  const envUrl = import.meta.env.VITE_PUBLIC_APP_URL as string | undefined;
+  const envUrl = studioEnv.VITE_PUBLIC_APP_URL;
 
   if (envUrl) {
     return envUrl.replace(/\/$/, "");
   }
 
-  if (window.location.hostname === "localhost") {
+  const { origin, hostname } = window.location;
+
+  if (hostname === "localhost") {
     return "http://localhost:3000";
   }
 
-  return "https://booom.dev";
+  if (hostname.startsWith("app.")) {
+    return `${window.location.protocol}//${hostname.slice(4)}`;
+  }
+
+  if (hostname.includes("-studio.")) {
+    return `${window.location.protocol}//${hostname.replace("-studio.", "-www.")}`;
+  }
+
+  if (hostname.startsWith("studio.")) {
+    return `${window.location.protocol}//www.${hostname.slice("studio.".length)}`;
+  }
+
+  return origin.replace(/\/$/, "");
+}
+
+function getPublicAppLabel() {
+  return getPublicAppUrl().replace(/^https?:\/\//, "");
 }
 
 function SignedOutView() {
@@ -412,13 +431,19 @@ function Workspace() {
             <article className="panel summary-card">
               <p className="panel-kicker">Site</p>
               <h2>{site.name}</h2>
-              <p className="site-meta">booom.dev/{site.slug}</p>
+              <p className="site-meta">{getPublicAppLabel()}/{site.slug}</p>
               {site.description ? <p className="site-description">{site.description}</p> : null}
             </article>
 
             <article className="panel summary-card">
               <p className="panel-kicker">Editor status</p>
-              <h2>{selectedPost ? "Editing draft" : "New draft"}</h2>
+              <h2>
+                {selectedPost
+                  ? selectedPost.status === "published"
+                    ? "Editing published post"
+                    : "Editing draft"
+                  : "New draft"}
+              </h2>
               <p className="muted-copy">
                 Preview URL: <span className="inline-code">{previewUrl}</span>
               </p>

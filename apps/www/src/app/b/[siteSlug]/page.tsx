@@ -7,6 +7,8 @@ type PageProps = {
   params: Promise<{ siteSlug: string }>;
 };
 
+export const revalidate = 60;
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { siteSlug } = await params;
   const data = await getBlogIndex(siteSlug);
