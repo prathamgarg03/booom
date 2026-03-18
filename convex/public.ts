@@ -1,5 +1,6 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
+import { findPublishedPostBySlug, listPublishedPostSummaries } from "./lib/publicPosts";
 import { normalizeSlug } from "./lib/slugs";
 
 export const blogIndex = query({
@@ -27,17 +28,7 @@ export const blogIndex = query({
         slug: site.slug,
         description: site.description ?? "",
       },
-      posts: posts
-        .filter((post) => post.status === "published")
-        .sort((a, b) => (b.publishedAt ?? 0) - (a.publishedAt ?? 0))
-        .map((post) => ({
-          _id: post._id,
-          title: post.title,
-          slug: post.slug,
-          excerpt: post.excerpt ?? "",
-          publishedAt: post.publishedAt ?? null,
-          updatedAt: post.updatedAt,
-        })),
+      posts: listPublishedPostSummaries(posts),
     };
   },
 });
@@ -57,14 +48,14 @@ export const blogPost = query({
       return null;
     }
 
-    const post = await ctx.db
+    const posts = await ctx.db
       .query("posts")
-      .withIndex("by_site_id_slug", (q) =>
-        q.eq("siteId", site._id).eq("slug", normalizeSlug(args.postSlug)),
-      )
-      .unique();
+      .withIndex("by_site_id", (q) => q.eq("siteId", site._id))
+      .collect();
 
-    if (!post || post.status !== "published") {
+    const post = findPublishedPostBySlug(posts, args.postSlug);
+
+    if (!post) {
       return null;
     }
 

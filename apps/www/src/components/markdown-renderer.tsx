@@ -1,154 +1,100 @@
-import { Fragment } from "react";
+import React from "react";
+import type { ComponentPropsWithoutRef } from "react";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
 
-function renderInline(text: string) {
-  return text.split(/(`[^`]+`)/g).map((part, index) => {
-    if (part.startsWith("`") && part.endsWith("`")) {
-      return (
-        <code
-          className="rounded bg-stone-950/8 px-1.5 py-0.5 font-mono text-[0.92em] text-stone-950"
-          key={`${part}-${index}`}
-        >
-          {part.slice(1, -1)}
-        </code>
-      );
-    }
-
-    return <Fragment key={`${part}-${index}`}>{part}</Fragment>;
-  });
-}
+type CodeProps = ComponentPropsWithoutRef<"code"> & {
+  inline?: boolean;
+};
 
 export function MarkdownRenderer({ markdown }: { markdown: string }) {
-  const lines = markdown.replace(/\r\n/g, "\n").split("\n");
-  const blocks: React.ReactNode[] = [];
-  let index = 0;
-
-  while (index < lines.length) {
-    const line = lines[index];
-
-    if (!line.trim()) {
-      index += 1;
-      continue;
-    }
-
-    if (line.startsWith("```")) {
-      const language = line.slice(3).trim();
-      index += 1;
-      const codeLines: string[] = [];
-
-      while (index < lines.length && !lines[index].startsWith("```")) {
-        codeLines.push(lines[index]);
-        index += 1;
-      }
-
-      if (index < lines.length) {
-        index += 1;
-      }
-
-      blocks.push(
-        <div className="my-8 overflow-hidden rounded-3xl border border-stone-900/10 bg-stone-950 text-stone-100" key={`code-${blocks.length}`}>
-          {language ? (
-            <div className="border-b border-white/10 px-4 py-2 text-xs uppercase tracking-[0.22em] text-stone-400">
-              {language}
-            </div>
-          ) : null}
-          <pre className="overflow-x-auto p-4 text-sm leading-7">
-            <code>{codeLines.join("\n")}</code>
+  return (
+    <ReactMarkdown
+      components={{
+        h1: ({ children }) => (
+          <h1 className="mt-12 text-4xl font-medium tracking-[-0.06em] text-stone-950">
+            {children}
+          </h1>
+        ),
+        h2: ({ children }) => (
+          <h2 className="mt-12 text-3xl font-medium tracking-[-0.05em] text-stone-950">
+            {children}
+          </h2>
+        ),
+        h3: ({ children }) => (
+          <h3 className="mt-10 text-2xl font-medium tracking-[-0.04em] text-stone-950">
+            {children}
+          </h3>
+        ),
+        p: ({ children }) => (
+          <p className="my-6 text-lg leading-8 text-stone-700">{children}</p>
+        ),
+        blockquote: ({ children }) => (
+          <blockquote className="my-8 border-l-4 border-orange-500/60 pl-5 text-lg italic text-stone-700">
+            {children}
+          </blockquote>
+        ),
+        ul: ({ children }) => (
+          <ul className="my-6 list-disc space-y-3 pl-6 text-lg leading-8 text-stone-700">
+            {children}
+          </ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="my-6 list-decimal space-y-3 pl-6 text-lg leading-8 text-stone-700">
+            {children}
+          </ol>
+        ),
+        li: ({ children }) => <li>{children}</li>,
+        a: ({ children, href }) => (
+          <a
+            className="text-orange-700 underline decoration-orange-400/50 underline-offset-4"
+            href={href}
+            rel="noreferrer"
+            target="_blank"
+          >
+            {children}
+          </a>
+        ),
+        pre: ({ children }) => (
+          <pre className="my-8 overflow-x-auto rounded-3xl border border-stone-900/10 bg-stone-950 p-4 text-sm leading-7 text-stone-100">
+            {children}
           </pre>
-        </div>,
-      );
-      continue;
-    }
-
-    if (line.startsWith("### ")) {
-      blocks.push(
-        <h3 className="mt-10 text-2xl font-medium tracking-[-0.04em] text-stone-950" key={`h3-${blocks.length}`}>
-          {renderInline(line.slice(4))}
-        </h3>,
-      );
-      index += 1;
-      continue;
-    }
-
-    if (line.startsWith("## ")) {
-      blocks.push(
-        <h2 className="mt-12 text-3xl font-medium tracking-[-0.05em] text-stone-950" key={`h2-${blocks.length}`}>
-          {renderInline(line.slice(3))}
-        </h2>,
-      );
-      index += 1;
-      continue;
-    }
-
-    if (line.startsWith("# ")) {
-      blocks.push(
-        <h1 className="mt-12 text-4xl font-medium tracking-[-0.06em] text-stone-950" key={`h1-${blocks.length}`}>
-          {renderInline(line.slice(2))}
-        </h1>,
-      );
-      index += 1;
-      continue;
-    }
-
-    if (line.startsWith("> ")) {
-      const quoteLines: string[] = [line.slice(2)];
-      index += 1;
-
-      while (index < lines.length && lines[index].startsWith("> ")) {
-        quoteLines.push(lines[index].slice(2));
-        index += 1;
-      }
-
-      blocks.push(
-        <blockquote
-          className="my-8 border-l-4 border-orange-500/60 pl-5 text-lg italic text-stone-700"
-          key={`quote-${blocks.length}`}
-        >
-          {quoteLines.join(" ")}
-        </blockquote>,
-      );
-      continue;
-    }
-
-    if (line.startsWith("- ")) {
-      const items: string[] = [line.slice(2)];
-      index += 1;
-
-      while (index < lines.length && lines[index].startsWith("- ")) {
-        items.push(lines[index].slice(2));
-        index += 1;
-      }
-
-      blocks.push(
-        <ul className="my-6 list-disc space-y-3 pl-6 text-lg leading-8 text-stone-700" key={`list-${blocks.length}`}>
-          {items.map((item, itemIndex) => (
-            <li key={`${item}-${itemIndex}`}>{renderInline(item)}</li>
-          ))}
-        </ul>,
-      );
-      continue;
-    }
-
-    const paragraphLines = [line];
-    index += 1;
-
-    while (
-      index < lines.length &&
-      lines[index].trim() &&
-      !lines[index].startsWith("#") &&
-      !lines[index].startsWith("> ") &&
-      !lines[index].startsWith("- ") &&
-      !lines[index].startsWith("```")
-    ) {
-      paragraphLines.push(lines[index]);
-      index += 1;
-    }
-
-    blocks.push(
-      <p className="my-6 text-lg leading-8 text-stone-700" key={`p-${blocks.length}`}>
-        {renderInline(paragraphLines.join(" "))}
-      </p>,
-    );
-  }
-
-  return <div>{blocks}</div>;
+        ),
+        code: ({ children, inline, ...props }: CodeProps) =>
+          inline ? (
+            <code
+              className="rounded bg-stone-950/8 px-1.5 py-0.5 font-mono text-[0.92em] text-stone-950"
+              {...props}
+            >
+              {children}
+            </code>
+          ) : (
+            <code className="font-mono" {...props}>
+              {children}
+            </code>
+          ),
+        table: ({ children }) => (
+          <div className="my-8 overflow-x-auto">
+            <table className="min-w-full border-collapse overflow-hidden rounded-2xl border border-stone-900/10 bg-white/60 text-left text-stone-700">
+              {children}
+            </table>
+          </div>
+        ),
+        thead: ({ children }) => <thead className="bg-stone-950/6">{children}</thead>,
+        th: ({ children }) => (
+          <th className="border-b border-stone-900/10 px-4 py-3 text-sm font-semibold">
+            {children}
+          </th>
+        ),
+        td: ({ children }) => (
+          <td className="border-b border-stone-900/10 px-4 py-3 text-sm">{children}</td>
+        ),
+      }}
+      rehypePlugins={[rehypeSanitize]}
+      remarkPlugins={[remarkGfm]}
+    >
+      {markdown}
+    </ReactMarkdown>
+  );
 }

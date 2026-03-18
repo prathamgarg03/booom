@@ -5,11 +5,13 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
-    "typecheck": "turbo typecheck"
+    "typecheck": "turbo typecheck",
+    "test": "node --import tsx --test tests/**/*.test.ts apps/**/*.test.ts apps/**/*.test.tsx"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
     "convex": "^1.33.1",
+    "tsx": "^4.21.0",
     "turbo": "^2.8.17",
     "typescript": "^5.9.3"
   },
