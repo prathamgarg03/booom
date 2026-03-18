@@ -35,7 +35,7 @@ export default async function BlogIndexPage({ params }: PageProps) {
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fffaf2_0%,#f3eadb_100%)] px-6 py-12 text-stone-950 sm:px-10">
       <div className="mx-auto max-w-4xl">
-        <div className="rounded-[2rem] border border-black/8 bg-white/78 p-8 shadow-[0_24px_80px_rgba(55,39,27,0.12)] sm:p-12">
+        <div className="rounded-4xl border border-black/8 bg-white/78 p-8 shadow-[0_24px_80px_rgba(55,39,27,0.12)] sm:p-12">
           <p className="text-xs uppercase tracking-[0.35em] text-stone-500">
             Booom Blog
           </p>
@@ -49,13 +49,13 @@ export default async function BlogIndexPage({ params }: PageProps) {
 
         <section className="mt-8 space-y-4">
           {data.posts.length === 0 ? (
-            <div className="rounded-[2rem] border border-dashed border-black/10 bg-white/70 p-8 text-stone-600">
+            <div className="rounded-4xl border border-dashed border-black/10 bg-white/70 p-8 text-stone-600">
               No published posts yet.
             </div>
           ) : (
             data.posts.map((post) => (
               <article
-                className="rounded-[2rem] border border-black/8 bg-white/78 p-8 shadow-[0_18px_44px_rgba(55,39,27,0.08)] transition hover:-translate-y-0.5"
+                className="rounded-4xl border border-black/8 bg-white/78 p-8 shadow-[0_18px_44px_rgba(55,39,27,0.08)] transition hover:-translate-y-0.5"
                 key={post._id}
               >
                 <p className="text-sm uppercase tracking-[0.28em] text-orange-700">

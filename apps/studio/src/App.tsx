@@ -32,6 +32,20 @@ function formatDate(timestamp?: number) {
   }).format(timestamp);
 }
 
+function getPublicAppUrl() {
+  const envUrl = import.meta.env.VITE_PUBLIC_APP_URL as string | undefined;
+
+  if (envUrl) {
+    return envUrl.replace(/\/$/, "");
+  }
+
+  if (window.location.hostname === "localhost") {
+    return "http://localhost:3000";
+  }
+
+  return "https://booom.dev";
+}
+
 function SignedOutView() {
   return (
     <section className="auth-panel">
@@ -118,7 +132,8 @@ function Workspace() {
       return "";
     }
 
-    return `<script async src="https://cdn.booom.dev/embed/v1.js" data-site="${site.slug}"></script>`;
+    const publicAppUrl = getPublicAppUrl();
+    return `<script async src="${publicAppUrl}/embed/v1.js" data-site="${site.slug}"></script>`;
   }, [site]);
 
   const previewUrl = useMemo(() => {
@@ -127,7 +142,7 @@ function Workspace() {
     }
 
     const slug = editorState.slug || "post-slug";
-    return `booom.dev/b/${site.slug}/${slug}`;
+    return `${getPublicAppUrl()}/b/${site.slug}/${slug}`;
   }, [editorState.slug, site]);
 
   function setError(message: string) {
