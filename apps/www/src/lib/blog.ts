@@ -1,9 +1,9 @@
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/lib/convex-api";
-import { getWwwServerEnv } from "@/lib/env";
+import { getWwwEnv } from "@/lib/env";
 
 export async function getBlogIndex(siteSlug: string) {
-  const env = getWwwServerEnv();
+  const env = getWwwEnv();
 
   return await fetchQuery(api.public.blogIndex, { siteSlug }, {
     url: env.NEXT_PUBLIC_CONVEX_URL,
@@ -11,7 +11,7 @@ export async function getBlogIndex(siteSlug: string) {
 }
 
 export async function getBlogPost(siteSlug: string, postSlug: string) {
-  const env = getWwwServerEnv();
+  const env = getWwwEnv();
 
   return await fetchQuery(api.public.blogPost, { siteSlug, postSlug }, {
     url: env.NEXT_PUBLIC_CONVEX_URL,

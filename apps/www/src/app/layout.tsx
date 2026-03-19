@@ -1,12 +1,23 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
+import { Syne, JetBrains_Mono, Geist } from "next/font/google";
 import "./globals.css";
-import { ConvexClientProvider } from "@/components/convex-client-provider";
-import { getWwwServerEnv } from "@/lib/env";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+
+const syne = Syne({ 
+  subsets: ["latin"],
+  variable: "--font-syne",
+});
+
+const jetbrainsMono = JetBrains_Mono({ 
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+});
 
 export const metadata: Metadata = {
   title: "Booom",
-  description: "DX focused embeddable blog platform",
+  description: "Dev-first embeddable blog platform. Paste-once distribution.",
 };
 
 export default function RootLayout({
@@ -14,15 +25,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const env = getWwwServerEnv();
-
   return (
-    <ClerkProvider publishableKey={env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
-      <html lang="en">
-        <body>
-          <ConvexClientProvider>{children}</ConvexClientProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html
+      lang="en"
+      className={cn(
+        "dark",
+        syne.variable,
+        jetbrainsMono.variable,
+        "font-sans",
+        geist.variable,
+      )}
+    >
+      <body className="relative min-h-screen bg-background text-zinc-100 antialiased selection:bg-orange-500/30 selection:text-white">
+        {children}
+      </body>
+    </html>
   );
 }
