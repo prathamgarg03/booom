@@ -1,14 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { BlogPreviewCard } from "@/components/blog-preview-card";
 import { EmbedSnippetCard } from "@/components/embed-snippet-card";
+import { Footer } from "@/components/footer";
 
 export default function Home() {
   const embedSnippet = `<script\n  async\n  src="https://booom.dev/embed/v1.js"\n  data-site="your-site-slug"\n>\n</script>`;
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-grid font-sans mx-auto max-w-310">
+    <main className="relative h-screen overflow-hidden bg-grid font-sans mx-auto max-w-310">
       <div className="px-8 py-6 sm:px-6 md:py-12">
-        <header className="mb-20 flex items-center justify-between mx-2">
+        <header className="mb-12 flex items-center justify-between mx-2">
           <span className="text-2xl font-extrabold tracking-tight">Booom</span>
           <nav className="flex flex-wrap gap-6 text-sm font-medium text-muted-foreground">
             <a className="hover:text-foreground transition-colors" href="/embed-demo">Docs</a>
@@ -45,6 +46,7 @@ export default function Home() {
           </div>
         </section>
       </div>
+      <Footer />
     </main>
   );
 }
