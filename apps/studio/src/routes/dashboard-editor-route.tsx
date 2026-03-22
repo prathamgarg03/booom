@@ -105,97 +105,103 @@ export function DashboardEditorRoute({ mode }: DashboardEditorRouteProps) {
 
   return (
     <>
-      <DashboardOverview
-        copyState={workspace.copyState}
-        embedDemoUrl={workspace.embedDemoUrl}
-        embedSnippet={workspace.embedSnippet}
-        onCopySnippet={() => void workspace.copySnippet()}
-        publicAppLabel={workspace.publicAppLabel}
-        site={workspace.site}
-        statusBody={<span className="inline-code">{previewUrl}</span>}
-        statusTitle={
-          selectedPost
-            ? selectedPost.status === "published"
-              ? "Editing published post"
-              : "Editing draft"
-            : "New draft"
-        }
-      />
-
-      <div className="editor-grid">
-        <PostEditorPanel
-          activeActionPostId={workspace.activeActionPostId}
-          editorState={editorState}
-          isSavingPost={isSavingPost}
-          onBodyChange={(value) =>
-            setEditorState((current) => ({
-              ...current,
-              body: value,
-            }))
+      <div className="mx-auto w-full max-w-7xl px-6 py-6">
+        <DashboardOverview
+          copyState={workspace.copyState}
+          embedDemoUrl={workspace.embedDemoUrl}
+          embedSnippet={workspace.embedSnippet}
+          onCopySnippet={() => void workspace.copySnippet()}
+          publicAppLabel={workspace.publicAppLabel}
+          site={workspace.site}
+          statusBody={<span className="font-mono text-foreground bg-muted/50 px-2 py-1 rounded truncate border border-border/50">{previewUrl}</span>}
+          statusTitle={
+            selectedPost
+              ? selectedPost.status === "published"
+                ? "Editing published post"
+                : "Editing draft"
+              : "New draft"
           }
-          onDelete={() => {
-            if (!selectedPost) {
-              return;
-            }
+        />
 
-            void workspace.deletePost(selectedPost._id).then((deleted) => {
-              if (deleted) {
-                navigate("/dashboard");
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_24rem]">
+          <div className="min-w-0">
+            <PostEditorPanel
+              activeActionPostId={workspace.activeActionPostId}
+              editorState={editorState}
+              isSavingPost={isSavingPost}
+              onBodyChange={(value) =>
+                setEditorState((current) => ({
+                  ...current,
+                  body: value,
+                }))
               }
-            });
-          }}
-          onExcerptChange={(value) =>
-            setEditorState((current) => ({
-              ...current,
-              excerpt: value,
-            }))
-          }
-          onPublish={() => {
-            if (selectedPost) {
-              void workspace.publishPost(selectedPost._id);
-            }
-          }}
-          onReset={() => navigate("/dashboard/posts/new")}
-          onSlugChange={(value) =>
-            setEditorState((current) => ({
-              ...current,
-              slugTouched: true,
-              slug: makeSlug(value),
-            }))
-          }
-          onSubmit={(event) => void handleSavePost(event)}
-          onTitleChange={(value) =>
-            setEditorState((current) => ({
-              ...current,
-              title: value,
-              slug: current.slugTouched ? current.slug : makeSlug(value),
-            }))
-          }
-          onUnpublish={() => {
-            if (selectedPost) {
-              void workspace.unpublishPost(selectedPost._id);
-            }
-          }}
-          previewUrl={previewUrl}
-          selectedPost={selectedPost}
-          site={site}
-        />
+              onDelete={() => {
+                if (!selectedPost) {
+                  return;
+                }
 
-        <PostLibraryPanel
-          activeActionPostId={workspace.activeActionPostId}
-          onDelete={async (targetPostId) => {
-            const deleted = await workspace.deletePost(targetPostId);
+                void workspace.deletePost(selectedPost._id).then((deleted) => {
+                  if (deleted) {
+                    navigate("/dashboard");
+                  }
+                });
+              }}
+              onExcerptChange={(value) =>
+                setEditorState((current) => ({
+                  ...current,
+                  excerpt: value,
+                }))
+              }
+              onPublish={() => {
+                if (selectedPost) {
+                  void workspace.publishPost(selectedPost._id);
+                }
+              }}
+              onReset={() => navigate("/dashboard/posts/new")}
+              onSlugChange={(value) =>
+                setEditorState((current) => ({
+                  ...current,
+                  slugTouched: true,
+                  slug: makeSlug(value),
+                }))
+              }
+              onSubmit={(event) => void handleSavePost(event)}
+              onTitleChange={(value) =>
+                setEditorState((current) => ({
+                  ...current,
+                  title: value,
+                  slug: current.slugTouched ? current.slug : makeSlug(value),
+                }))
+              }
+              onUnpublish={() => {
+                if (selectedPost) {
+                  void workspace.unpublishPost(selectedPost._id);
+                }
+              }}
+              previewUrl={previewUrl}
+              selectedPost={selectedPost}
+              site={site}
+            />
+          </div>
 
-            if (deleted && selectedPost && targetPostId === selectedPost._id) {
-              navigate("/dashboard");
-            }
-          }}
-          onPublish={workspace.publishPost}
-          onUnpublish={workspace.unpublishPost}
-          posts={workspace.posts}
-          selectedPostId={selectedPost?._id ?? null}
-          siteSlug={site.slug}
-        />
+          <div className="hidden xl:block">
+            <PostLibraryPanel
+              activeActionPostId={workspace.activeActionPostId}
+              onDelete={async (targetPostId) => {
+                const deleted = await workspace.deletePost(targetPostId);
+
+                if (deleted && selectedPost && targetPostId === selectedPost._id) {
+                  navigate("/dashboard");
+                }
+              }}
+              onPublish={workspace.publishPost}
+              onUnpublish={workspace.unpublishPost}
+              posts={workspace.posts}
+              selectedPostId={selectedPost?._id ?? null}
+              siteSlug={site.slug}
+            />
+          </div>
+        </div>
       </div>
     </>
   );

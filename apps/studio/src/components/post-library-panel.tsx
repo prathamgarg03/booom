@@ -1,6 +1,16 @@
 import { Link } from "react-router-dom";
 import type { Id, PostRecord } from "../lib/convex-api";
 import { formatDate } from "../lib/studio";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { ScrollArea } from "./ui/scroll-area";
+import { Separator } from "./ui/separator";
 
 type PostLibraryPanelProps = {
   siteSlug: string;
@@ -22,88 +32,104 @@ export function PostLibraryPanel({
   onDelete,
 }: PostLibraryPanelProps) {
   return (
-    <section className="panel library-panel">
-      <div className="section-header">
+    <Card className="border-border/50 bg-card/60 shadow-md backdrop-blur">
+      <CardHeader className="flex flex-row items-center justify-between gap-4">
         <div>
-          <p className="panel-kicker">Library</p>
-          <h2>Your posts</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1">Library</p>
+          <CardTitle className="text-xl font-bold tracking-tight">Your posts</CardTitle>
         </div>
-        <Link className="ghost-button button-link" to="/dashboard/posts/new">
-          New draft
-        </Link>
-      </div>
-      {posts === undefined ? (
-        <p className="muted-copy">Loading posts...</p>
-      ) : posts.length === 0 ? (
-        <p className="muted-copy">
-          No posts yet. Create your first draft and we&apos;ll use this list as the
-          basis for the public blog and embed.
-        </p>
-      ) : (
-        <div className="post-list">
-          {posts.map((post) => {
-            const isSelected = post._id === selectedPostId;
-            const isBusy = activeActionPostId === post._id;
+        <Button asChild size="sm" variant="outline">
+          <Link to="/dashboard/posts/new">New draft</Link>
+        </Button>
+      </CardHeader>
+      <Separator />
+      <CardContent className="pt-6">
+        {posts === undefined ? (
+          <p className="text-sm text-muted-foreground">Loading posts...</p>
+        ) : posts.length === 0 ? (
+          <div className="text-center py-12 px-4 border-2 border-dashed border-border/50 rounded-lg">
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+              No posts yet. Create your first draft and we&apos;ll use this list as the
+              basis for the public blog and embed.
+            </p>
+          </div>
+        ) : (
+          <ScrollArea className="h-[560px] pr-3">
+          <div className="flex flex-col gap-4">
+            {posts.map((post) => {
+              const isSelected = post._id === selectedPostId;
+              const isBusy = activeActionPostId === post._id;
 
-            return (
-              <article
-                className={`post-card${isSelected ? " selected" : ""}`}
-                key={post._id}
-              >
-                <Link className="post-card-main post-card-link" to={`/dashboard/posts/${post._id}`}>
-                  <div className="post-card-head">
-                    <h3>{post.title}</h3>
-                    <span
-                      className={`status-pill ${post.status === "published" ? "published" : ""}`}
+              return (
+                <article
+                  className={`group relative flex flex-col md:flex-row md:items-start justify-between gap-4 p-5 rounded-lg border transition-all ${
+                    isSelected
+                      ? "border-primary bg-primary/5 shadow-sm"
+                      : "border-border/50 bg-card hover:border-primary/50 hover:shadow-md"
+                  }`}
+                  key={post._id}
+                >
+                  <Link className="flex-1 min-w-0" to={`/dashboard/posts/${post._id}`}>
+                    <div className="flex items-center gap-3 mb-1">
+                      <h3 className="text-lg font-bold truncate tracking-tight text-foreground transition-colors group-hover:text-primary">{post.title}</h3>
+                      <Badge
+                        className="uppercase tracking-wider"
+                        variant={post.status === "published" ? "default" : "outline"}
+                      >
+                        {post.status}
+                      </Badge>
+                    </div>
+                    <p className="text-xs font-mono text-muted-foreground mb-3 truncate">
+                      /{siteSlug}/<span className="text-foreground">{post.slug}</span>
+                    </p>
+                    <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed mb-4">
+                      {post.excerpt || <span className="italic opacity-50">No excerpt yet. This will be used in public summaries later.</span>}
+                    </p>
+                    <p className="text-[11px] font-medium text-muted-foreground/80 uppercase tracking-widest flex items-center gap-2">
+                      <span>Updated {formatDate(post.updatedAt)}</span>
+                      <span>&bull;</span>
+                      <span>Published {formatDate(post.publishedAt)}</span>
+                    </p>
+                  </Link>
+                  <div className="flex md:flex-col gap-2 shrink-0 pt-1">
+                    {post.status === "draft" ? (
+                      <Button
+                        disabled={isBusy}
+                        onClick={() => void onPublish(post._id)}
+                        size="sm"
+                        variant="secondary"
+                        type="button"
+                      >
+                        {isBusy ? "Publishing..." : "Publish"}
+                      </Button>
+                    ) : (
+                      <Button
+                        disabled={isBusy}
+                        onClick={() => void onUnpublish(post._id)}
+                        size="sm"
+                        variant="outline"
+                        type="button"
+                      >
+                        {isBusy ? "Updating..." : "Unpublish"}
+                      </Button>
+                    )}
+                    <Button
+                      disabled={isBusy}
+                      onClick={() => void onDelete(post._id)}
+                      size="sm"
+                      variant="ghost"
+                      type="button"
                     >
-                      {post.status}
-                    </span>
+                      {isBusy ? "Working..." : "Delete"}
+                    </Button>
                   </div>
-                  <p className="post-slug">
-                    /{siteSlug}/{post.slug}
-                  </p>
-                  <p className="post-excerpt">
-                    {post.excerpt || "No excerpt yet. This will be used in public summaries later."}
-                  </p>
-                  <p className="post-meta">
-                    Updated {formatDate(post.updatedAt)} · Published{" "}
-                    {formatDate(post.publishedAt)}
-                  </p>
-                </Link>
-                <div className="post-card-actions">
-                  {post.status === "draft" ? (
-                    <button
-                      className="ghost-button"
-                      disabled={isBusy}
-                      onClick={() => void onPublish(post._id)}
-                      type="button"
-                    >
-                      {isBusy ? "Publishing..." : "Publish"}
-                    </button>
-                  ) : (
-                    <button
-                      className="ghost-button"
-                      disabled={isBusy}
-                      onClick={() => void onUnpublish(post._id)}
-                      type="button"
-                    >
-                      {isBusy ? "Updating..." : "Unpublish"}
-                    </button>
-                  )}
-                  <button
-                    className="ghost-button danger-button"
-                    disabled={isBusy}
-                    onClick={() => void onDelete(post._id)}
-                    type="button"
-                  >
-                    {isBusy ? "Working..." : "Delete"}
-                  </button>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
-    </section>
+                </article>
+              );
+            })}
+          </div>
+          </ScrollArea>
+        )}
+      </CardContent>
+    </Card>
   );
 }

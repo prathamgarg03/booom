@@ -5,6 +5,7 @@ import { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import "./index.css";
 import App from "./App";
+import { TooltipProvider } from "./components/ui/tooltip";
 import { studioEnv } from "./lib/env";
 
 const convex = new ConvexReactClient(studioEnv.VITE_CONVEX_URL);
@@ -19,9 +20,11 @@ applyDocumentShell();
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ClerkProvider publishableKey={studioEnv.VITE_CLERK_PUBLISHABLE_KEY}>
-      <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-        <App />
-      </ConvexProviderWithClerk>
+      <TooltipProvider>
+        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+          <App />
+        </ConvexProviderWithClerk>
+      </TooltipProvider>
     </ClerkProvider>
   </StrictMode>,
 );

@@ -1,5 +1,16 @@
 import type { EditorState } from "../lib/studio";
 import type { Id, PostRecord, SiteRecord } from "../lib/convex-api";
+import { Button } from "./ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { Input } from "./ui/input";
+import { Separator } from "./ui/separator";
+import { Textarea } from "./ui/textarea";
 
 type PostEditorPanelProps = {
   site: SiteRecord;
@@ -39,68 +50,86 @@ export function PostEditorPanel({
   const isBusy = selectedPost ? activeActionPostId === selectedPost._id : false;
 
   return (
-    <section className="panel form-panel">
-      <div className="editor-header">
+    <Card className="flex h-full flex-col border-border/50 bg-card/60 shadow-xl backdrop-blur">
+      <CardHeader className="gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="panel-kicker">Editor</p>
-          <h2>{selectedPost ? "Update post" : "Create a draft"}</h2>
-          <p className="muted-copy">
-            Preview URL: <span className="inline-code">{previewUrl}</span>
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1">Editor</p>
+          <CardTitle className="mb-2 text-2xl font-bold tracking-tight">
+            {selectedPost ? "Update post" : "Create a draft"}
+          </CardTitle>
+          <CardDescription className="flex flex-wrap items-center gap-2">
+            Preview URL:
+            <a href={previewUrl} target="_blank" rel="noreferrer" className="font-mono text-xs bg-muted border border-border/50 text-foreground px-2 py-1 rounded truncate max-w-[200px] sm:max-w-[300px] hover:text-primary transition-colors">
+              {previewUrl}
+            </a>
+          </CardDescription>
         </div>
         {selectedPost ? (
-          <button className="ghost-button" onClick={onReset} type="button">
+          <Button
+            onClick={onReset}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
             New draft
-          </button>
+          </Button>
         ) : null}
       </div>
+      </CardHeader>
+      <Separator />
 
-      <form className="site-form" onSubmit={onSubmit}>
-        <label>
-          <span>Title</span>
-          <input
-            onChange={(event) => onTitleChange(event.target.value)}
-            placeholder="Shipping Booom checkpoint two"
-            value={editorState.title}
-          />
-        </label>
-
-        <label>
-          <span>Slug</span>
-          <div className="slug-field">
-            <span>/{site.slug}/</span>
-            <input
-              onChange={(event) => onSlugChange(event.target.value)}
-              placeholder="shipping-booom-checkpoint-two"
-              value={editorState.slug}
+      <CardContent className="flex flex-1 flex-col pt-6">
+      <form className="flex flex-1 flex-col gap-6" onSubmit={onSubmit}>
+        <div className="grid gap-6">
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-bold text-foreground">Title</span>
+            <Input
+              className="h-10 text-base font-semibold"
+              onChange={(event) => onTitleChange(event.target.value)}
+              placeholder="Shipping Booom checkpoint two"
+              value={editorState.title}
             />
-          </div>
-        </label>
+          </label>
 
-        <label>
-          <span>Excerpt</span>
-          <textarea
-            onChange={(event) => onExcerptChange(event.target.value)}
-            placeholder="A short summary that will later power cards and embeds."
-            rows={3}
-            value={editorState.excerpt}
-          />
-        </label>
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-bold text-foreground">Slug</span>
+            <div className="flex items-center overflow-hidden rounded-lg border border-input bg-background">
+              <span className="pl-3 pr-1 py-2 text-sm text-muted-foreground bg-muted/30 border-r border-border/50 select-none">/{site.slug}/</span>
+              <Input
+                className="border-0 bg-transparent font-mono shadow-none focus-visible:ring-0"
+                onChange={(event) => onSlugChange(event.target.value)}
+                placeholder="shipping-booom-checkpoint-two"
+                value={editorState.slug}
+              />
+            </div>
+          </label>
 
-        <label>
-          <span>Body</span>
-          <textarea
-            className="post-body"
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-bold text-foreground">Excerpt</span>
+            <Textarea
+              className="min-h-24 resize-y"
+              onChange={(event) => onExcerptChange(event.target.value)}
+              placeholder="A short summary that will later power cards and embeds."
+              rows={2}
+              value={editorState.excerpt}
+            />
+          </label>
+        </div>
+
+        <label className="flex flex-col gap-2 flex-1 mt-2">
+          <span className="text-sm font-bold text-foreground">Body</span>
+          <Textarea
+            className="h-full min-h-[360px] resize-y font-mono leading-relaxed"
             onChange={(event) => onBodyChange(event.target.value)}
             placeholder={"# Hello world\n\nWrite your post in Markdown.\n\n- Shipping notes\n- Product updates\n- Devlogs"}
-            rows={14}
             value={editorState.body}
           />
         </label>
 
-        <div className="editor-actions">
-          <button
-            className="primary-button"
+        <Separator />
+        <div className="mt-auto flex flex-wrap items-center gap-3 pt-2">
+          <Button
             disabled={isSavingPost || isBusy}
             type="submit"
           >
@@ -109,40 +138,45 @@ export function PostEditorPanel({
               : selectedPost
                 ? "Save changes"
                 : "Create draft"}
-          </button>
+          </Button>
+          
           {selectedPost ? (
             selectedPost.status === "published" ? (
-              <button
-                className="ghost-button"
+              <Button
                 disabled={isBusy}
                 onClick={onUnpublish}
+                variant="outline"
                 type="button"
               >
                 {isBusy ? "Updating..." : "Move to draft"}
-              </button>
+              </Button>
             ) : (
-              <button
-                className="ghost-button"
+              <Button
                 disabled={isBusy}
                 onClick={onPublish}
+                variant="secondary"
                 type="button"
               >
                 {isBusy ? "Publishing..." : "Publish now"}
-              </button>
+              </Button>
             )
           ) : null}
+          
+          <div className="flex-1" />
+          
           {selectedPost ? (
-            <button
-              className="ghost-button danger-button"
+            <Button
               disabled={isBusy}
               onClick={onDelete}
+              variant="ghost"
               type="button"
             >
               {isBusy ? "Deleting..." : "Delete post"}
-            </button>
+            </Button>
           ) : null}
         </div>
       </form>
-    </section>
+      </CardContent>
+    </Card>
   );
 }
