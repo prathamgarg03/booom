@@ -161,7 +161,7 @@ export default function EmbedDemoPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-6 py-10 text-stone-900 sm:px-10">
-      <section className="rounded-[2rem] border border-black/8 bg-[linear-gradient(135deg,rgba(255,248,238,0.96),rgba(248,238,223,0.92))] p-8 shadow-[0_24px_80px_rgba(55,39,27,0.12)] sm:p-10">
+      <section className="rounded-4xl border border-black/8 bg-[linear-gradient(135deg,rgba(255,248,238,0.96),rgba(248,238,223,0.92))] p-8 shadow-[0_24px_80px_rgba(55,39,27,0.12)] sm:p-10">
         <p className="text-xs uppercase tracking-[0.3em] text-stone-500">Embed Demo</p>
         <h1 className="mt-4 max-w-4xl text-4xl font-medium tracking-[-0.05em] text-stone-950 sm:text-6xl">
           Test the one-line widget against a real hosted Booom site.
@@ -219,7 +219,7 @@ export default function EmbedDemoPage() {
             </label>
           </div>
 
-          <div className="mt-6 rounded-[1.5rem] border border-black/8 bg-stone-950 p-4 text-stone-50">
+          <div className="mt-6 rounded-3xl border border-black/8 bg-stone-950 p-4 text-stone-50">
             <p className="text-xs uppercase tracking-[0.24em] text-stone-400">Script snippet</p>
             <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-all font-mono text-sm leading-7 text-stone-100">
               {snippet || "<script async src=\"https://your-booom-host/embed/v1.js\" data-site=\"your-site-slug\"></script>"}
@@ -253,9 +253,9 @@ export default function EmbedDemoPage() {
             ) : null}
           </div>
 
-          <div className="mt-6 overflow-hidden rounded-[1.5rem] border border-black/8 bg-[#f5ede0]">
+          <div className="mt-6 overflow-hidden rounded-3xl border border-black/8 bg-[#f5ede0]">
             <iframe
-              className="min-h-[560px] w-full border-0 bg-transparent"
+              className="min-h-140 w-full border-0 bg-transparent"
               sandbox="allow-scripts allow-popups"
               srcDoc={previewDocument}
               title="Booom embed preview"
