@@ -36,7 +36,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fffaf2_0%,#f3eadb_100%)] px-6 py-12 text-stone-950 sm:px-10">
-      <article className="mx-auto max-w-3xl rounded-[2rem] border border-black/8 bg-white/78 p-8 shadow-[0_24px_80px_rgba(55,39,27,0.12)] sm:p-12">
+      <article className="mx-auto max-w-3xl rounded-4xl border border-black/8 bg-white/78 p-8 shadow-[0_24px_80px_rgba(55,39,27,0.12)] sm:p-12">
         <p className="text-xs uppercase tracking-[0.35em] text-stone-500">
           <Link href={`/b/${data.site.slug}`}>{data.site.name}</Link>
         </p>

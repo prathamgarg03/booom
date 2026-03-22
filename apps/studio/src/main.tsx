@@ -12,7 +12,6 @@ const convex = new ConvexReactClient(studioEnv.VITE_CONVEX_URL);
 
 function applyDocumentShell() {
   document.documentElement.lang = "en";
-  document.documentElement.classList.add("dark");
 }
 
 applyDocumentShell();
