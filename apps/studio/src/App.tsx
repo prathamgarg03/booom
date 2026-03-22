@@ -1,11 +1,10 @@
 import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { LoadingPanel } from "./components/loading-panel";
-import { StudioLanding } from "./components/studio-landing";
+import { HomePage } from "./components/home";
 import { DashboardEditorRoute } from "./routes/dashboard-editor-route";
 import { DashboardIndexRoute } from "./routes/dashboard-index-route";
 import { DashboardLayout } from "./routes/dashboard-layout";
-import "./App.css";
 
 function HomeRouteGate() {
   return (
@@ -14,7 +13,7 @@ function HomeRouteGate() {
         <LoadingPanel />
       </AuthLoading>
       <Unauthenticated>
-        <StudioLanding />
+        <HomePage />
       </Unauthenticated>
       <Authenticated>
         <Navigate replace to="/dashboard" />
