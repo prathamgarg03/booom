@@ -27,6 +27,7 @@ export function formatPublishedDate(timestamp?: number | null) {
     month: "long",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   }).format(timestamp);
 }
 
@@ -39,6 +40,7 @@ export function formatShortDate(timestamp?: number | null) {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   }).format(timestamp);
 }
 
