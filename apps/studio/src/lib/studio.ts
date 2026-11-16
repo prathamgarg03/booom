@@ -19,6 +19,40 @@ export function formatDate(timestamp?: number) {
   }).format(timestamp);
 }
 
+export function formatRelative(timestamp?: number) {
+  if (!timestamp) {
+    return "";
+  }
+
+  const seconds = Math.round((timestamp - Date.now()) / 1000);
+  const units: [Intl.RelativeTimeFormatUnit, number][] = [
+    ["year", 60 * 60 * 24 * 365],
+    ["month", 60 * 60 * 24 * 30],
+    ["week", 60 * 60 * 24 * 7],
+    ["day", 60 * 60 * 24],
+    ["hour", 60 * 60],
+    ["minute", 60],
+  ];
+  const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
+  for (const [unit, size] of units) {
+    if (Math.abs(seconds) >= size) {
+      return formatter.format(Math.round(seconds / size), unit);
+    }
+  }
+
+  return "just now";
+}
+
+export function countWords(text: string) {
+  const trimmed = text.trim();
+  return trimmed ? trimmed.split(/\s+/).length : 0;
+}
+
+export function readingMinutes(words: number) {
+  return Math.max(1, Math.round(words / 230));
+}
+
 export function getPublicAppUrl(explicitUrl?: string) {
   if (explicitUrl) {
     return explicitUrl.replace(/\/$/, "");
@@ -48,11 +82,6 @@ export function getPublicAppUrl(explicitUrl?: string) {
 export function getPublicAppLabel(explicitUrl?: string) {
   return getPublicAppUrl(explicitUrl).replace(/^https?:\/\//, "");
 }
-
-export type NoticeState = {
-  error: string | null;
-  success: string | null;
-};
 
 export type EditorState = {
   title: string;

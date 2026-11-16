@@ -179,3 +179,50 @@
     letter-spacing: var(--tracking-normal);
   }
 }
+/* Public blog: the writer's space, not Booom's. Neutral paper and ink,
+   follows the reader's system theme. */
+.blog-theme {
+  --paper: #fdfdfc;
+  --ink: #1d1c1a;
+  --ink-soft: #4a4844;
+  --ink-muted: #75726c;
+  --rule: #e6e4df;
+  --link: #1f4fbf;
+  --code-bg: #f3f2ef;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  .blog-theme {
+    --paper: #161615;
+    --ink: #ecebe7;
+    --ink-soft: #c9c7c1;
+    --ink-muted: #96938c;
+    --rule: #2c2b29;
+    --link: #92b1ff;
+    --code-bg: #21201e;
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-muted: var(--ink-muted);
+  --color-rule: var(--rule);
+  --color-link: var(--link);
+  --color-code: var(--code-bg);
+  --font-reading: var(--font-newsreader), Georgia, serif;
+  --font-ui: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+}
+
+body:has(.blog-theme) {
+  background: #fdfdfc;
+}
+
+@media (prefers-color-scheme: dark) {
+  body:has(.blog-theme) {
+    background: #161615;
+  }
+}

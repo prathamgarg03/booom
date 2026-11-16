@@ -29,3 +29,20 @@ export function formatPublishedDate(timestamp?: number | null) {
     year: "numeric",
   }).format(timestamp);
 }
+
+export function formatShortDate(timestamp?: number | null) {
+  if (!timestamp) {
+    return "Draft";
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(timestamp);
+}
+
+export function readingMinutes(markdown: string) {
+  const words = markdown.trim() ? markdown.trim().split(/\s+/).length : 0;
+  return Math.max(1, Math.round(words / 230));
+}

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BlogFooter } from "@/components/blog-footer";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
-import { formatPublishedDate, getBlogPost } from "@/lib/blog";
+import { formatPublishedDate, getBlogPost, readingMinutes } from "@/lib/blog";
 
 type PageProps = {
   params: Promise<{ siteSlug: string; postSlug: string }>;
@@ -16,7 +17,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!data) {
     return {
-      title: "Post Not Found | Booom",
+      title: "Post not found",
     };
   }
 
@@ -34,35 +35,55 @@ export default async function BlogPostPage({ params }: PageProps) {
     notFound();
   }
 
-  return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fffaf2_0%,#f3eadb_100%)] px-6 py-12 text-stone-950 sm:px-10">
-      <article className="mx-auto max-w-3xl rounded-4xl border border-black/8 bg-white/78 p-8 shadow-[0_24px_80px_rgba(55,39,27,0.12)] sm:p-12">
-        <p className="text-xs uppercase tracking-[0.35em] text-stone-500">
-          <Link href={`/b/${data.site.slug}`}>{data.site.name}</Link>
-        </p>
-        <h1 className="mt-4 text-4xl font-medium tracking-[-0.06em] sm:text-6xl">
-          {data.post.title}
-        </h1>
-        <p className="mt-6 text-sm uppercase tracking-[0.24em] text-orange-700">
-          Published {formatPublishedDate(data.post.publishedAt)}
-        </p>
-        {data.post.excerpt ? (
-          <p className="mt-6 text-xl leading-8 text-stone-600">{data.post.excerpt}</p>
-        ) : null}
+  const blogHref = `/b/${data.site.slug}`;
+  const minutes = readingMinutes(data.post.body);
 
-        <div className="mt-12 border-t border-black/8 pt-8">
+  return (
+    <main className="mx-auto w-full max-w-[46rem] px-5 pt-8 pb-12 sm:px-8 sm:pt-12">
+      <nav>
+        <Link
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
+          href={blogHref}
+        >
+          <svg aria-hidden className="size-4" fill="none" viewBox="0 0 16 16">
+            <path d="M10 3.5 5.5 8l4.5 4.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+          </svg>
+          {data.site.name}
+        </Link>
+      </nav>
+
+      <article className="mt-14 sm:mt-20">
+        <header>
+          <h1 className="font-reading text-[2.5rem] leading-[1.08] font-medium tracking-[-0.015em] text-balance sm:text-[3.25rem]">
+            {data.post.title}
+          </h1>
+          {data.post.excerpt ? (
+            <p className="mt-5 font-reading text-[1.375rem] leading-normal text-ink-soft text-pretty italic">
+              {data.post.excerpt}
+            </p>
+          ) : null}
+          <p className="mt-8 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-muted">
+            <time
+              dateTime={
+                data.post.publishedAt ? new Date(data.post.publishedAt).toISOString() : undefined
+              }
+            >
+              {formatPublishedDate(data.post.publishedAt)}
+            </time>
+            <span>{minutes} min read</span>
+          </p>
+        </header>
+
+        <div className="mt-10 border-t border-rule pt-10">
           <MarkdownRenderer markdown={data.post.body} />
         </div>
-
-        <div className="mt-12 border-t border-black/8 pt-6">
-          <Link
-            className="inline-flex rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-stone-900"
-            href={`/b/${data.site.slug}`}
-          >
-            Back to {data.site.name}
-          </Link>
-        </div>
       </article>
+
+      <BlogFooter>
+        <Link className="transition-colors hover:text-ink" href={blogHref}>
+          More from {data.site.name}
+        </Link>
+      </BlogFooter>
     </main>
   );
 }

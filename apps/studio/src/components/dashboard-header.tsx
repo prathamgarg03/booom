@@ -1,68 +1,73 @@
-import { UserButton } from "@clerk/react";
-import { useMemo } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Fragment } from "react";
+import { Link, useLocation, useParams } from "react-router-dom";
+import type { PostRecord, SiteRecord } from "../lib/convex-api";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "./ui/breadcrumb";
 import { SidebarTrigger } from "./ui/sidebar";
-import { Button } from "./ui/button";
-import { Separator } from "./ui/separator";
-import type { SiteRecord } from "../lib/convex-api";
 
 type DashboardHeaderProps = {
   site: SiteRecord | null;
-  publicAppUrl: string;
-  userLabel: string;
+  posts: PostRecord[] | undefined;
+  onActionsMount: (element: HTMLElement | null) => void;
 };
 
-export function DashboardHeader({
-  site,
-  publicAppUrl,
-  userLabel,
-}: DashboardHeaderProps) {
-  const location = useLocation();
-  const title = useMemo(() => {
-    if (location.pathname.startsWith("/dashboard/posts/")) {
-      return "Post Editor";
-    }
+type Crumb = { label: string; to?: string };
 
-    return "Dashboard";
-  }, [location.pathname]);
+export function DashboardHeader({ site, posts, onActionsMount }: DashboardHeaderProps) {
+  const { pathname } = useLocation();
+  const { postId } = useParams();
+
+  const crumbs: Crumb[] = [];
+
+  if (!site) {
+    crumbs.push({ label: "Set up your blog" });
+  } else if (pathname === "/dashboard/embed") {
+    crumbs.push({ label: "Embed" });
+  } else if (pathname === "/dashboard/posts/new") {
+    crumbs.push({ label: "Posts", to: "/dashboard" }, { label: "New post" });
+  } else if (pathname.startsWith("/dashboard/posts/")) {
+    const post = posts?.find((entry) => entry._id === postId);
+    crumbs.push(
+      { label: "Posts", to: "/dashboard" },
+      { label: post?.title || (posts ? "Untitled" : "…") },
+    );
+  } else {
+    crumbs.push({ label: "Posts" });
+  }
 
   return (
-    <header className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-border/50 bg-background/80 px-4 py-3 backdrop-blur">
-      <div className="flex min-w-0 items-center gap-3">
-        <SidebarTrigger className="shrink-0" />
-        <Separator className="h-6" orientation="vertical" />
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-            Booom Studio
-          </p>
-          <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">
-            {title}
-          </h1>
-        </div>
-      </div>
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b bg-background/85 px-3 backdrop-blur-md sm:px-4">
+      <SidebarTrigger className="-ml-1 shrink-0" />
+      <span aria-hidden className="h-5 w-px bg-border" />
+      <Breadcrumb className="min-w-0 flex-1">
+        <BreadcrumbList className="flex-nowrap">
+          {crumbs.map((crumb, index) => {
+            const isLast = index === crumbs.length - 1;
 
-      <div className="flex items-center gap-3">
-        {site ? (
-          <Button asChild size="sm" variant="outline">
-            <a href={`${publicAppUrl}/b/${site.slug}`} rel="noreferrer" target="_blank">
-              View blog
-            </a>
-          </Button>
-        ) : null}
-        <Button asChild size="sm" variant="ghost">
-          <Link to="/">Home</Link>
-        </Button>
-        <div className="flex items-center gap-3 border-l border-border/50 pl-3">
-          <span className="text-sm font-medium text-foreground">{userLabel}</span>
-          <UserButton
-            appearance={{
-              elements: {
-                userButtonAvatarBox: "h-8 w-8",
-              },
-            }}
-          />
-        </div>
-      </div>
+            return (
+              <Fragment key={`${crumb.label}-${index}`}>
+                <BreadcrumbItem className={isLast ? "min-w-0" : "hidden sm:inline-flex"}>
+                  {crumb.to && !isLast ? (
+                    <BreadcrumbLink asChild>
+                      <Link to={crumb.to}>{crumb.label}</Link>
+                    </BreadcrumbLink>
+                  ) : (
+                    <BreadcrumbPage className="truncate font-medium">{crumb.label}</BreadcrumbPage>
+                  )}
+                </BreadcrumbItem>
+                {!isLast ? <BreadcrumbSeparator className="hidden sm:inline-flex" /> : null}
+              </Fragment>
+            );
+          })}
+        </BreadcrumbList>
+      </Breadcrumb>
+      <div className="flex shrink-0 items-center gap-2" ref={onActionsMount} />
     </header>
   );
 }

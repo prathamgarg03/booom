@@ -1,20 +1,15 @@
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { makeSlug } from "../lib/studio";
 import { Button } from "./ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
 import { Input } from "./ui/input";
-import { Separator } from "./ui/separator";
+import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 
 type SiteSetupPanelProps = {
   isProvisioning: boolean;
   isCreatingSite: boolean;
+  publicAppLabel: string;
   onCreateSite: (args: {
     name: string;
     slug: string;
@@ -25,6 +20,7 @@ type SiteSetupPanelProps = {
 export function SiteSetupPanel({
   isProvisioning,
   isCreatingSite,
+  publicAppLabel,
   onCreateSite,
 }: SiteSetupPanelProps) {
   const [siteName, setSiteName] = useState("");
@@ -35,110 +31,96 @@ export function SiteSetupPanel({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const created = await onCreateSite({
-      name: siteName,
-      slug: siteSlug,
-      description: siteDescription || undefined,
+    await onCreateSite({
+      name: siteName.trim(),
+      slug: makeSlug(siteSlug || siteName),
+      description: siteDescription.trim() || undefined,
     });
-
-    if (!created) {
-      return;
-    }
-
-    setSiteName("");
-    setSiteSlug("");
-    setSiteDescription("");
-    setSiteSlugTouched(false);
   }
 
+  if (isProvisioning) {
+    return (
+      <div className="flex min-h-[60svh] items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" />
+        Setting up your account…
+      </div>
+    );
+  }
+
+  const canSubmit = siteName.trim().length > 0 && makeSlug(siteSlug || siteName).length > 0;
+
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-8 px-6 py-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-      <section className="flex flex-col justify-center">
-        <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">Foundation</p>
-        <h2 className="text-4xl font-extrabold tracking-tight mb-4">Create the home for your posts.</h2>
-        <p className="text-lg text-muted-foreground leading-relaxed max-w-md">
-          The MVP starts with one site per account. Later this can expand into
-          multiple sites, teams, and settings without rewriting the dashboard
-          routes.
-        </p>
-      </section>
+    <div className="mx-auto w-full max-w-lg px-4 py-12 sm:py-20">
+      <h1 className="font-serif text-4xl leading-tight font-medium">Name your blog</h1>
+      <p className="mt-3 text-muted-foreground">
+        This is what readers see at the top of every page. You can write your first post right
+        after.
+      </p>
 
-      <Card className="border-border/50 bg-card/60 shadow-xl backdrop-blur">
-        <CardHeader>
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-            Site setup
-          </p>
-          <CardTitle className="text-2xl font-bold tracking-tight">
-            Create your first site.
-          </CardTitle>
-          <CardDescription>
-            This becomes the root for your hosted blog, embed, and future theme settings.
-          </CardDescription>
-        </CardHeader>
-        <Separator />
-        <CardContent className="pt-6">
+      <form className="mt-10 space-y-6" onSubmit={handleSubmit}>
+        <div className="space-y-2">
+          <Label htmlFor="site-name">Blog name</Label>
+          <Input
+            autoFocus
+            id="site-name"
+            onChange={(event) => {
+              const nextName = event.target.value;
+              setSiteName(nextName);
 
-        {isProvisioning ? (
-          <div className="flex items-center gap-3 py-8 justify-center">
-            <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-            <p className="text-sm font-medium text-muted-foreground">Provisioning your Booom profile...</p>
+              if (!siteSlugTouched) {
+                setSiteSlug(makeSlug(nextName));
+              }
+            }}
+            placeholder="Field notes"
+            value={siteName}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="site-slug">Address</Label>
+          <div className="flex h-8 items-center overflow-hidden rounded-lg border border-input bg-input/30 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
+            <span className="shrink-0 truncate pl-2.5 font-mono text-xs text-muted-foreground select-none">
+              {publicAppLabel}/b/
+            </span>
+            <Input
+              className="h-full rounded-none border-0 bg-transparent pl-0.5 font-mono text-xs shadow-none focus-visible:ring-0 dark:bg-transparent"
+              id="site-slug"
+              onBlur={() => setSiteSlug((current) => makeSlug(current))}
+              onChange={(event) => {
+                setSiteSlugTouched(true);
+                setSiteSlug(
+                  event.target.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9-]+/g, "-")
+                    .replace(/-{2,}/g, "-"),
+                );
+              }}
+              placeholder="field-notes"
+              spellCheck={false}
+              value={siteSlug}
+            />
           </div>
-        ) : (
-          <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-bold text-foreground">Site name</span>
-              <Input
-                onChange={(event) => {
-                  const nextName = event.target.value;
-                  setSiteName(nextName);
+          <p className="text-xs text-muted-foreground">Lowercase letters, numbers and hyphens.</p>
+        </div>
 
-                  if (!siteSlugTouched) {
-                    setSiteSlug(makeSlug(nextName));
-                  }
-                }}
-                placeholder="Booom Engineering"
-                value={siteName}
-              />
-            </label>
+        <div className="space-y-2">
+          <Label htmlFor="site-description">
+            Description <span className="font-normal text-muted-foreground">(optional)</span>
+          </Label>
+          <Textarea
+            className="min-h-20 resize-y"
+            id="site-description"
+            onChange={(event) => setSiteDescription(event.target.value)}
+            placeholder="What you write about, in a sentence."
+            value={siteDescription}
+          />
+        </div>
 
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-bold text-foreground">Site slug</span>
-              <div className="flex items-center overflow-hidden rounded-lg border border-input bg-background">
-                <span className="pl-3 pr-1 py-2 text-sm text-muted-foreground bg-muted/30 border-r border-border/50 select-none">booom.dev/</span>
-                <Input
-                  className="border-0 bg-transparent font-mono shadow-none focus-visible:ring-0"
-                  onChange={(event) => {
-                    setSiteSlugTouched(true);
-                    setSiteSlug(makeSlug(event.target.value));
-                  }}
-                  placeholder="booom-engineering"
-                  value={siteSlug}
-                />
-              </div>
-            </label>
-
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-bold text-foreground">Description</span>
-              <Textarea
-                className="min-h-28 resize-y"
-                onChange={(event) => setSiteDescription(event.target.value)}
-                placeholder="Write concise product notes, devlogs, or release breakdowns."
-                rows={4}
-                value={siteDescription}
-              />
-            </label>
-
-            <Button
-              className="mt-2 w-full"
-              disabled={isCreatingSite}
-              type="submit"
-            >
-              {isCreatingSite ? "Creating site..." : "Create site"}
-            </Button>
-          </form>
-        )}
-        </CardContent>
-      </Card>
+        <Button className="w-full" disabled={!canSubmit || isCreatingSite} size="lg" type="submit">
+          {isCreatingSite ? <Loader2 className="animate-spin" data-icon="inline-start" /> : null}
+          {isCreatingSite ? "Creating blog…" : "Create blog"}
+        </Button>
+      </form>
     </div>
   );
 }

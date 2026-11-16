@@ -35,6 +35,9 @@ importers:
       '@fontsource-variable/jetbrains-mono':
         specifier: ^5.2.8
         version: 5.2.8
+      '@fontsource-variable/newsreader':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@fontsource/syne':
         specifier: ^5.2.7
         version: 5.2.7
@@ -44,12 +47,18 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      cn:
+        specifier: ^0.5.2
+        version: 0.5.2
       convex:
         specifier: ^1.33.1
         version: 1.33.1(@clerk/clerk-react@5.61.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
       lucide-react:
         specifier: ^0.577.0
         version: 0.577.0(react@19.2.4)
+      next-themes:
+        specifier: ^0.4.6
+        version: 0.4.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       radix-ui:
         specifier: ^1.4.3
         version: 1.4.3(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -59,12 +68,24 @@ importers:
       react-dom:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
+      react-markdown:
+        specifier: ^10.1.0
+        version: 10.1.0(@types/react@19.2.14)(react@19.2.4)
       react-router-dom:
         specifier: ^7.13.1
         version: 7.13.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      rehype-sanitize:
+        specifier: ^6.0.0
+        version: 6.0.0
+      remark-gfm:
+        specifier: ^4.0.1
+        version: 4.0.1
       shadcn:
         specifier: ^4.0.8
         version: 4.0.8(@types/node@24.12.0)(typescript@5.9.3)
+      sonner:
+        specifier: ^2.0.8
+        version: 2.0.8(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       tailwind-merge:
         specifier: ^3.5.0
         version: 3.5.0
@@ -620,6 +641,9 @@ packages:
 
   '@fontsource-variable/jetbrains-mono@5.2.8':
     resolution: {integrity: sha512-WBA9elru6Jdp5df2mES55wuOO0WIrn3kpXnI4+W2ek5u3ZgLS9XS4gmIlcQhiZOWEKl95meYdvK7xI+ETLCq/Q==}
+
+  '@fontsource-variable/newsreader@5.3.0':
+    resolution: {integrity: sha512-rrzYi43qMpbzwuFtf9OkWH8sxAPVPcQQQEwXpPtwaKYeJ8yVg5aLs5kawmo1f2Q1t1M38TLmEKCkGVDsYwgdFw==}
 
   '@fontsource/syne@5.2.7':
     resolution: {integrity: sha512-OgWgLPSbieiSfdFXgMs0l/rspIFzVoDZxw8wKj15n39epRqO5+Uv36c0MXNDcw2GuK/TIBgpC9G8VAgs+bVm7A==}
@@ -2426,6 +2450,11 @@ packages:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
 
+  cn@0.5.2:
+    resolution: {integrity: sha512-wm10E6iuJ37rALOw3D+3cfaXXZSLNMh2uxpQn3dNICqfJM59yXqgbA9/9Iiz155j5kYNLdK6WreNdW3NQtx3OQ==}
+    engines: {node: '>=22'}
+    hasBin: true
+
   code-block-writer@13.0.3:
     resolution: {integrity: sha512-Oofo0pq3IKnsFtuHqSF7TqBfr71aeyZDVJ0HpmqB7FBM2qEigL0iPONSCZSO9pE9dZTAxANe5XHG9Uy0YMv8cg==}
 
@@ -3838,6 +3867,12 @@ packages:
     resolution: {integrity: sha512-8Ofs/AUQh8MaEcrlq5xOX0CQ9ypTF5dl78mjlMNfOK08fzpgTHQRQPBxcPlEtIw0yRpws+Zo/3r+5WRby7u3Gg==}
     engines: {node: '>= 0.6'}
 
+  next-themes@0.4.6:
+    resolution: {integrity: sha512-pZvgD5L0IEvX5/9GWyHMf3m8BKiVQwsCMHfoFosXtXBMnaS0ZnIJ9ST4b4NqLVKDEm8QBxoNNGNaBv2JNF6XNA==}
+    peerDependencies:
+      react: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
+      react-dom: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
+
   next@16.1.7:
     resolution: {integrity: sha512-WM0L7WrSvKwoLegLYr6V+mz+RIofqQgVAfHhMp9a88ms0cFX8iX9ew+snpWlSBwpkURJOUdvCEt3uLl3NNzvWg==}
     engines: {node: '>=20.9.0'}
@@ -4348,6 +4383,16 @@ packages:
 
   sisteransi@1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
+
+  sonner@2.0.8:
+    resolution: {integrity: sha512-UM/ByIoFra8yzV75n1o0Puu0bw5U/9UNnDacrJNspekBewIfsQ3D6ez1nvlWpt7aTsO6rujQtifBpycwIivqlg==}
+    peerDependencies:
+      '@types/react': ^18.0.0 || ^19.0.0
+      react: ^18.0.0 || ^19.0.0 || ^19.0.0-rc
+      react-dom: ^18.0.0 || ^19.0.0 || ^19.0.0-rc
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -5356,6 +5401,8 @@ snapshots:
   '@fontsource-variable/geist@5.2.8': {}
 
   '@fontsource-variable/jetbrains-mono@5.2.8': {}
+
+  '@fontsource-variable/newsreader@5.3.0': {}
 
   '@fontsource/syne@5.2.7': {}
 
@@ -7801,6 +7848,8 @@ snapshots:
 
   clsx@2.1.1: {}
 
+  cn@0.5.2: {}
+
   code-block-writer@13.0.3: {}
 
   color-convert@2.0.1:
@@ -9530,6 +9579,11 @@ snapshots:
 
   negotiator@1.0.0: {}
 
+  next-themes@0.4.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
+    dependencies:
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+
   next@16.1.7(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
       '@next/env': 16.1.7
@@ -9945,6 +9999,24 @@ snapshots:
       html-url-attributes: 3.0.1
       mdast-util-to-hast: 13.2.1
       react: 19.2.3
+      remark-parse: 11.0.0
+      remark-rehype: 11.1.2
+      unified: 11.0.5
+      unist-util-visit: 5.1.0
+      vfile: 6.0.3
+    transitivePeerDependencies:
+      - supports-color
+
+  react-markdown@10.1.0(@types/react@19.2.14)(react@19.2.4):
+    dependencies:
+      '@types/hast': 3.0.4
+      '@types/mdast': 4.0.4
+      '@types/react': 19.2.14
+      devlop: 1.1.0
+      hast-util-to-jsx-runtime: 2.3.6
+      html-url-attributes: 3.0.1
+      mdast-util-to-hast: 13.2.1
+      react: 19.2.4
       remark-parse: 11.0.0
       remark-rehype: 11.1.2
       unified: 11.0.5
@@ -10398,6 +10470,13 @@ snapshots:
   signal-exit@4.1.0: {}
 
   sisteransi@1.0.5: {}
+
+  sonner@2.0.8(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
+    dependencies:
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+    optionalDependencies:
+      '@types/react': 19.2.14
 
   source-map-js@1.2.1: {}
 

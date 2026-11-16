@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useUser } from "@clerk/react";
 import { useMutation, useQuery } from "convex/react";
 import { api, type Id } from "../lib/convex-api";
 import { studioEnv } from "../lib/env";
-import { getPublicAppLabel, getPublicAppUrl, type NoticeState } from "../lib/studio";
+import { getPublicAppLabel, getPublicAppUrl } from "../lib/studio";
 
 export function useStudioWorkspace() {
   const { user: clerkUser } = useUser();
@@ -18,20 +19,16 @@ export function useStudioWorkspace() {
   const site = sites?.[0] ?? null;
   const posts = useQuery(api.posts.listBySite, site ? { siteId: site._id } : "skip");
 
-  const [notice, setNotice] = useState<NoticeState>({ error: null, success: null });
   const [isCreatingSite, setIsCreatingSite] = useState(false);
   const [activeActionPostId, setActiveActionPostId] = useState<Id<"posts"> | null>(
     null,
   );
-  const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
 
   useEffect(() => {
     void ensureCurrentUser().catch((error: unknown) => {
-      setNotice({
-        error:
-          error instanceof Error ? error.message : "Could not initialize your user",
-        success: null,
-      });
+      toast.error(
+        error instanceof Error ? error.message : "Couldn't load your account. Refresh to try again.",
+      );
     });
   }, [ensureCurrentUser]);
 
@@ -60,16 +57,14 @@ export function useStudioWorkspace() {
     return `${publicAppUrl}/embed-demo?site=${encodeURIComponent(site.slug)}`;
   }, [publicAppUrl, site]);
 
+  const blogUrl = site ? `${publicAppUrl}/b/${site.slug}` : "";
+
   function setError(message: string) {
-    setNotice({ error: message, success: null });
+    toast.error(message);
   }
 
   function setSuccess(message: string) {
-    setNotice({ error: null, success: message });
-  }
-
-  function clearNotice() {
-    setNotice({ error: null, success: null });
+    toast.success(message);
   }
 
   async function createSite(args: {
@@ -77,15 +72,14 @@ export function useStudioWorkspace() {
     slug: string;
     description?: string;
   }) {
-    clearNotice();
     setIsCreatingSite(true);
 
     try {
       await createSiteMutation(args);
-      setSuccess("Site created. You can start drafting posts now.");
+      setSuccess("Blog created. Write your first post.");
       return true;
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Could not create your site");
+      setError(error instanceof Error ? error.message : "Couldn't create your blog");
       return false;
     } finally {
       setIsCreatingSite(false);
@@ -93,15 +87,14 @@ export function useStudioWorkspace() {
   }
 
   async function publishPost(postId: Id<"posts">) {
-    clearNotice();
     setActiveActionPostId(postId);
 
     try {
       await publishMutation({ postId });
-      setSuccess("Post published.");
+      setSuccess("Published");
       return true;
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Could not publish the post");
+      setError(error instanceof Error ? error.message : "Couldn't publish the post");
       return false;
     } finally {
       setActiveActionPostId(null);
@@ -109,16 +102,15 @@ export function useStudioWorkspace() {
   }
 
   async function unpublishPost(postId: Id<"posts">) {
-    clearNotice();
     setActiveActionPostId(postId);
 
     try {
       await unpublishMutation({ postId });
-      setSuccess("Post moved back to draft.");
+      setSuccess("Unpublished. The post is a draft again.");
       return true;
     } catch (error) {
       setError(
-        error instanceof Error ? error.message : "Could not unpublish the post",
+        error instanceof Error ? error.message : "Couldn't unpublish the post",
       );
       return false;
     } finally {
@@ -127,47 +119,28 @@ export function useStudioWorkspace() {
   }
 
   async function deletePost(postId: Id<"posts">) {
-    const post = posts?.find((entry) => entry._id === postId);
-
-    if (!post) {
-      setError("That post could not be found.");
-      return false;
-    }
-
-    const shouldDelete = window.confirm(
-      `Delete "${post.title}"? This removes it from the studio, public blog, and embed feed.`,
-    );
-
-    if (!shouldDelete) {
-      return false;
-    }
-
-    clearNotice();
     setActiveActionPostId(postId);
 
     try {
       await deleteMutation({ postId });
-      setSuccess("Post deleted.");
+      setSuccess("Post deleted");
       return true;
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Could not delete the post");
+      setError(error instanceof Error ? error.message : "Couldn't delete the post");
       return false;
     } finally {
       setActiveActionPostId(null);
     }
   }
 
-  async function copySnippet() {
-    if (!embedSnippet) {
-      return;
-    }
-
+  async function copyText(text: string, successMessage: string) {
     try {
-      await navigator.clipboard.writeText(embedSnippet);
-      setCopyState("copied");
-      window.setTimeout(() => setCopyState("idle"), 1800);
+      await navigator.clipboard.writeText(text);
+      toast.success(successMessage);
+      return true;
     } catch {
-      setError("Could not copy the snippet. You can still copy it manually.");
+      toast.error("Couldn't copy. Select the text and copy it manually.");
+      return false;
     }
   }
 
@@ -176,10 +149,8 @@ export function useStudioWorkspace() {
     viewer,
     site,
     posts,
-    notice,
     isCreatingSite,
     activeActionPostId,
-    copyState,
     embedSnippet,
     embedDemoUrl,
     publicAppUrl,
@@ -188,10 +159,10 @@ export function useStudioWorkspace() {
     publishPost,
     unpublishPost,
     deletePost,
-    copySnippet,
+    blogUrl,
+    copyText,
     setError,
     setSuccess,
-    clearNotice,
   };
 }
 

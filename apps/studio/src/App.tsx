@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { LoadingPanel } from "./components/loading-panel";
 import { HomePage } from "./components/home";
 import { DashboardEditorRoute } from "./routes/dashboard-editor-route";
+import { DashboardEmbedRoute } from "./routes/dashboard-embed-route";
 import { DashboardIndexRoute } from "./routes/dashboard-index-route";
 import { DashboardLayout } from "./routes/dashboard-layout";
 
@@ -40,12 +41,13 @@ function DashboardRouteGate() {
 
 export default function App() {
   return (
-    <main className="studio-page">
+    <>
       <BrowserRouter>
         <Routes>
           <Route element={<HomeRouteGate />} path="/" />
           <Route element={<DashboardRouteGate />} path="/dashboard">
             <Route element={<DashboardIndexRoute />} index />
+            <Route element={<DashboardEmbedRoute />} path="embed" />
             <Route
               element={<DashboardEditorRoute mode="new" />}
               path="posts/new"
@@ -58,6 +60,6 @@ export default function App() {
           <Route element={<Navigate replace to="/" />} path="*" />
         </Routes>
       </BrowserRouter>
-    </main>
+    </>
   );
 }

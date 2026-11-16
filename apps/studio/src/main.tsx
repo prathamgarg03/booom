@@ -3,8 +3,13 @@ import { createRoot } from "react-dom/client";
 import { ClerkProvider, useAuth } from "@clerk/react";
 import { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
+import "@fontsource-variable/geist/index.css";
+import "@fontsource-variable/jetbrains-mono/index.css";
+import "@fontsource-variable/newsreader/opsz.css";
+import "@fontsource-variable/newsreader/opsz-italic.css";
 import "./index.css";
 import App from "./App";
+import { Toaster } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { studioEnv } from "./lib/env";
 
@@ -22,6 +27,7 @@ createRoot(document.getElementById("root")!).render(
       <TooltipProvider>
         <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
           <App />
+          <Toaster position="bottom-right" />
         </ConvexProviderWithClerk>
       </TooltipProvider>
     </ClerkProvider>

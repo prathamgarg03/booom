@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { formatPublishedDate, getBlogIndex } from "@/lib/blog";
+import { BlogFooter } from "@/components/blog-footer";
+import { formatPublishedDate, formatShortDate, getBlogIndex } from "@/lib/blog";
 
 type PageProps = {
   params: Promise<{ siteSlug: string }>;
@@ -15,14 +16,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!data) {
     return {
-      title: "Blog Not Found | Booom",
+      title: "Blog not found",
     };
   }
 
   return {
-    title: `${data.site.name} | Booom`,
-    description:
-      data.site.description || `Posts published on ${data.site.name} via Booom.`,
+    title: data.site.name,
+    description: data.site.description || `Writing from ${data.site.name}.`,
   };
 }
 
@@ -35,53 +35,58 @@ export default async function BlogIndexPage({ params }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fffaf2_0%,#f3eadb_100%)] px-6 py-12 text-stone-950 sm:px-10">
-      <div className="mx-auto max-w-4xl">
-        <div className="rounded-4xl border border-black/8 bg-white/78 p-8 shadow-[0_24px_80px_rgba(55,39,27,0.12)] sm:p-12">
-          <p className="text-xs uppercase tracking-[0.35em] text-stone-500">
-            Booom Blog
+    <main className="mx-auto w-full max-w-[46rem] px-5 pt-16 pb-12 sm:px-8 sm:pt-28">
+      <header>
+        <h1 className="font-reading text-[2.75rem] leading-[1.05] font-medium tracking-[-0.015em] text-balance sm:text-[3.5rem]">
+          {data.site.name}
+        </h1>
+        {data.site.description ? (
+          <p className="mt-4 max-w-[34rem] font-reading text-xl leading-relaxed text-ink-soft italic">
+            {data.site.description}
           </p>
-          <h1 className="mt-4 text-5xl font-medium tracking-[-0.06em] sm:text-6xl">
-            {data.site.name}
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-stone-600">
-            {data.site.description || "A developer-first publication powered by Booom."}
-          </p>
-        </div>
+        ) : null}
+      </header>
 
-        <section className="mt-8 space-y-4">
-          {data.posts.length === 0 ? (
-            <div className="rounded-4xl border border-dashed border-black/10 bg-white/70 p-8 text-stone-600">
-              No published posts yet.
-            </div>
-          ) : (
-            data.posts.map((post) => (
-              <article
-                className="rounded-4xl border border-black/8 bg-white/78 p-8 shadow-[0_18px_44px_rgba(55,39,27,0.08)] transition hover:-translate-y-0.5"
-                key={post._id}
-              >
-                <p className="text-sm uppercase tracking-[0.28em] text-orange-700">
-                  {formatPublishedDate(post.publishedAt)}
-                </p>
-                <h2 className="mt-4 text-3xl font-medium tracking-[-0.05em]">
-                  <Link href={`/b/${data.site.slug}/${post.slug}`}>{post.title}</Link>
-                </h2>
-                <p className="mt-4 max-w-2xl text-lg leading-8 text-stone-600">
-                  {post.excerpt || "Open the post to read the full entry."}
-                </p>
-                <div className="mt-6">
-                  <Link
-                    className="inline-flex rounded-full border border-black/10 bg-stone-950 px-4 py-2 text-sm font-medium text-stone-50"
-                    href={`/b/${data.site.slug}/${post.slug}`}
+      <section aria-label="Posts" className="mt-16 sm:mt-20">
+        {data.posts.length === 0 ? (
+          <p className="border-t border-rule pt-8 font-reading text-lg text-ink-muted">
+            Nothing published yet. Check back soon.
+          </p>
+        ) : (
+          <ol className="border-t border-rule">
+            {data.posts.map((post) => (
+              <li className="border-b border-rule" key={post._id}>
+                <Link
+                  className="group grid gap-x-8 gap-y-1 py-7 outline-none focus-visible:bg-code sm:grid-cols-[8.5rem_minmax(0,1fr)]"
+                  href={`/b/${data.site.slug}/${post.slug}`}
+                >
+                  <time
+                    className="text-sm text-ink-muted tabular-nums sm:pt-1.5"
+                    dateTime={post.publishedAt ? new Date(post.publishedAt).toISOString() : undefined}
+                    title={formatPublishedDate(post.publishedAt)}
                   >
-                    Read post
-                  </Link>
-                </div>
-              </article>
-            ))
-          )}
-        </section>
-      </div>
+                    {formatShortDate(post.publishedAt)}
+                  </time>
+                  <div className="min-w-0">
+                    <h2 className="font-reading text-2xl leading-snug font-medium text-pretty decoration-ink/30 decoration-1 underline-offset-[5px] group-hover:underline">
+                      {post.title}
+                    </h2>
+                    {post.excerpt ? (
+                      <p className="mt-2 max-w-[36rem] font-reading text-lg leading-relaxed text-ink-soft">
+                        {post.excerpt}
+                      </p>
+                    ) : null}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
+
+      <BlogFooter>
+        {data.posts.length} {data.posts.length === 1 ? "post" : "posts"}
+      </BlogFooter>
     </main>
   );
 }

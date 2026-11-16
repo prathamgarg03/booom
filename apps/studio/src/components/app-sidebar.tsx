@@ -1,17 +1,24 @@
+import { useClerk } from "@clerk/react";
 import {
-  BarChart3,
-  Globe,
-  Heart,
-  ImageIcon,
-  LayoutDashboard,
-  MessageSquareText,
-  Palette,
-  PenSquare,
-  Star,
-  SwatchBook,
+  ChevronsUpDown,
+  Code2,
+  Copy,
+  ExternalLink,
+  FileText,
+  LogOut,
+  Plus,
+  UserRound,
 } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
-import type { SiteRecord } from "../lib/convex-api";
+import type { StudioWorkspaceContext } from "../hooks/use-studio-workspace";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -25,115 +32,211 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  SidebarSeparator,
+  useSidebar,
 } from "./ui/sidebar";
 
 type AppSidebarProps = {
-  site: SiteRecord | null;
-  publicAppUrl: string;
+  workspace: StudioWorkspaceContext;
 };
 
-const futureSections = [
-  { label: "Templates", icon: SwatchBook },
-  { label: "Themes", icon: Palette },
-  { label: "Analytics", icon: BarChart3 },
-  { label: "Reviews", icon: Star },
-  { label: "Images", icon: ImageIcon },
-  { label: "Comments", icon: MessageSquareText },
-  { label: "Likes", icon: Heart },
-] as const;
+function Monogram({ label, className = "" }: { label: string; className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={`flex aspect-square size-8 shrink-0 items-center justify-center rounded-md bg-primary font-serif text-[17px] font-semibold text-primary-foreground ${className}`}
+    >
+      {label.trim().charAt(0).toUpperCase() || "B"}
+    </span>
+  );
+}
 
-export function AppSidebar({ site, publicAppUrl }: AppSidebarProps) {
-  const location = useLocation();
+export function AppSidebar({ workspace }: AppSidebarProps) {
+  const { site, posts, blogUrl, publicAppLabel, clerkUser, copyText } = workspace;
+  const { pathname } = useLocation();
+  const { isMobile } = useSidebar();
+  const clerk = useClerk();
+
+  const isPostsActive = pathname === "/dashboard" || /^\/dashboard\/posts\/(?!new$)/.test(pathname);
+  const draftCount = posts?.filter((post) => post.status === "draft").length ?? 0;
+  const userName = clerkUser?.fullName || clerkUser?.username || "Your account";
+  const userEmail = clerkUser?.primaryEmailAddress?.emailAddress ?? "";
 
   return (
-    <Sidebar collapsible="icon" variant="inset">
-      <SidebarHeader className="gap-3 px-3 py-4">
-        <div className="flex flex-col gap-1 px-2">
-          <span className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
-            Booom
-          </span>
-          <span className="text-sm font-semibold text-sidebar-foreground">
-            Studio
-          </span>
-        </div>
-        {site ? (
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={location.pathname === "/dashboard"} size="lg" tooltip="Overview">
-                <NavLink end to="/dashboard">
-                  <LayoutDashboard />
-                  <span>{site.name}</span>
-                </NavLink>
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="pt-3">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            {site ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton
+                    className="data-[state=open]:bg-sidebar-accent"
+                    size="lg"
+                    tooltip={site.name}
+                  >
+                    <Monogram label={site.name} />
+                    <span className="grid min-w-0 flex-1 text-left leading-tight">
+                      <span className="truncate text-sm font-medium">{site.name}</span>
+                      <span className="truncate font-mono text-[11px] text-muted-foreground">
+                        /b/{site.slug}
+                      </span>
+                    </span>
+                    <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="w-64"
+                  side={isMobile ? "bottom" : "right"}
+                  sideOffset={8}
+                >
+                  <DropdownMenuLabel className="font-normal text-muted-foreground">
+                    {publicAppLabel}/b/{site.slug}
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem asChild>
+                    <a href={blogUrl} rel="noreferrer" target="_blank">
+                      <ExternalLink />
+                      Open public blog
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => void copyText(blogUrl, "Blog link copied")}>
+                    <Copy />
+                    Copy blog link
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <SidebarMenuButton size="lg">
+                <Monogram label="Booom" />
+                <span className="truncate text-sm font-medium">Booom Studio</span>
               </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        ) : null}
+            )}
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarSeparator />
+      {site ? (
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    className="border border-sidebar-border bg-sidebar-accent/40 hover:bg-sidebar-accent"
+                    isActive={pathname === "/dashboard/posts/new"}
+                    tooltip="New post"
+                  >
+                    <Link to="/dashboard/posts/new">
+                      <Plus />
+                      <span>New post</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
 
-      <SidebarContent className="px-2">
-        <SidebarGroup>
-          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={location.pathname === "/dashboard"} tooltip="Overview">
-                  <NavLink end to="/dashboard">
-                    <LayoutDashboard />
-                    <span>Overview</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={location.pathname.startsWith("/dashboard/posts")} tooltip="Posts">
-                  <NavLink to={site ? "/dashboard/posts/new" : "/dashboard"}>
-                    <PenSquare />
-                    <span>Posts</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              {site ? (
+          <SidebarGroup>
+            <SidebarGroupLabel>Write</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={isPostsActive} tooltip="Posts">
+                    <NavLink end to="/dashboard">
+                      <FileText />
+                      <span>Posts</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                  {draftCount > 0 ? (
+                    <SidebarMenuBadge className="text-muted-foreground">
+                      {draftCount} {draftCount === 1 ? "draft" : "drafts"}
+                    </SidebarMenuBadge>
+                  ) : null}
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <SidebarGroup>
+            <SidebarGroupLabel>Share</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === "/dashboard/embed"}
+                    tooltip="Embed on your site"
+                  >
+                    <NavLink to="/dashboard/embed">
+                      <Code2 />
+                      <span>Embed on your site</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild tooltip="Public blog">
-                    <a href={`${publicAppUrl}/b/${site.slug}`} rel="noreferrer" target="_blank">
-                      <Globe />
+                    <a href={blogUrl} rel="noreferrer" target="_blank">
+                      <ExternalLink />
                       <span>Public blog</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ) : null}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+      ) : (
+        <SidebarContent />
+      )}
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Coming Soon</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {futureSections.map((item) => (
-                <SidebarMenuItem key={item.label}>
-                  <SidebarMenuButton aria-disabled className="cursor-not-allowed opacity-70" tooltip={`${item.label} coming soon`}>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                  <SidebarMenuBadge>Soon</SidebarMenuBadge>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-
-      <SidebarFooter className="px-3 py-4">
+      <SidebarFooter className="pb-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Home">
-              <Link to="/">
-                <span>Back to home</span>
-              </Link>
-            </SidebarMenuButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  className="data-[state=open]:bg-sidebar-accent"
+                  size="lg"
+                  tooltip={userName}
+                >
+                  {clerkUser?.imageUrl ? (
+                    <img
+                      alt=""
+                      className="size-8 shrink-0 rounded-full object-cover"
+                      src={clerkUser.imageUrl}
+                    />
+                  ) : (
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted">
+                      <UserRound className="size-4" />
+                    </span>
+                  )}
+                  <span className="grid min-w-0 flex-1 text-left leading-tight">
+                    <span className="truncate text-sm font-medium">{userName}</span>
+                    {userEmail ? (
+                      <span className="truncate text-xs text-muted-foreground">{userEmail}</span>
+                    ) : null}
+                  </span>
+                  <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-56"
+                side={isMobile ? "top" : "right"}
+                sideOffset={8}
+              >
+                <DropdownMenuItem onSelect={() => clerk.openUserProfile()}>
+                  <UserRound />
+                  Account settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => void clerk.signOut({ redirectUrl: "/" })}>
+                  <LogOut />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
