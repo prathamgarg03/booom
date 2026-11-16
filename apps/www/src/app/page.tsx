@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { BlogPreviewCard } from "@/components/blog-preview-card";
 import { EmbedSnippetCard } from "@/components/embed-snippet-card";
@@ -35,7 +36,7 @@ export default function Home() {
                 <a href="https://booom-studio.vercel.app">Start for Free</a>
               </Button>
               <Button className="py-6 px-8 text-base font-semibold transition-all hover:-translate-y-1" variant="secondary" asChild>
-                <a href="/b/prathamgarg-com">Live Demo</a>
+                <Link href="/b/prathamgarg-com">Live Demo</Link>
               </Button>
             </div>
           </div>

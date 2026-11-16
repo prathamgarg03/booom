@@ -1,6 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useMemo, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Check, Copy, ExternalLink, Lock, Monitor, RotateCw, Smartphone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const LIMITS = [3, 5, 8, 12] as const;
+type Theme = "light" | "dark";
+type Viewport = "desktop" | "mobile";
 
 function normalizeSlug(input: string) {
   return input
@@ -11,14 +22,16 @@ function normalizeSlug(input: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-function clampLimit(input: string) {
-  const value = Number.parseInt(input, 10);
+function closestLimit(input: string | null) {
+  const value = Number.parseInt(input ?? "", 10);
 
   if (!Number.isFinite(value) || value <= 0) {
     return 5;
   }
 
-  return Math.min(value, 12);
+  return LIMITS.reduce((best, option) =>
+    Math.abs(option - value) < Math.abs(best - value) ? option : best,
+  );
 }
 
 function buildSnippet({
@@ -31,7 +44,7 @@ function buildSnippet({
   origin: string;
   siteSlug: string;
   limit: number;
-  theme: "light" | "dark";
+  theme: Theme;
   target?: string;
 }) {
   const attrs = [
@@ -49,225 +62,292 @@ function buildSnippet({
   return `<script ${attrs.join(" ")}></script>`;
 }
 
-function buildPreviewDocument(previewSnippet: string) {
+/** A deliberately ordinary personal site, so the widget is judged in context. */
+function buildHostDocument(snippet: string, theme: Theme) {
+  const dark = theme === "dark";
+  const colors = dark
+    ? { bg: "#111110", ink: "#ecebe7", muted: "#8f8c86", rule: "#2a2927" }
+    : { bg: "#f7f7f5", ink: "#1d1c1a", muted: "#75726c", rule: "#e4e2dd" };
+
+  const body = snippet
+    ? `<div id="booom-preview"></div>${snippet}`
+    : `<p class="empty">Enter your blog address on the left to load your posts here.</p>`;
+
   return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Booom Embed Demo</title>
+    <title>Your site</title>
     <style>
+      * { box-sizing: border-box; }
       body {
         margin: 0;
-        padding: 28px;
-        background:
-          radial-gradient(circle at top left, rgba(255, 137, 76, 0.16), transparent 30%),
-          linear-gradient(180deg, #fdf8ef 0%, #f5ede0 100%);
-        color: #1d1a17;
+        background: ${colors.bg};
+        color: ${colors.ink};
         font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
       }
-
-      .frame {
-        max-width: 720px;
+      nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 680px;
         margin: 0 auto;
-        padding: 22px;
-        border: 1px solid rgba(29, 26, 23, 0.1);
-        border-radius: 24px;
-        background: rgba(255, 255, 255, 0.76);
-        box-shadow: 0 20px 50px rgba(55, 39, 27, 0.12);
+        padding: 20px 24px;
+        font-size: 14px;
       }
-
-      .eyebrow {
+      nav strong { font-weight: 600; }
+      nav span { color: ${colors.muted}; margin-left: 18px; }
+      main { max-width: 680px; margin: 0 auto; padding: 32px 24px 64px; }
+      h1 { margin: 0 0 8px; font-size: 28px; line-height: 1.2; letter-spacing: -0.01em; }
+      .lede { margin: 0 0 28px; color: ${colors.muted}; line-height: 1.6; }
+      .empty {
         margin: 0;
-        font-size: 11px;
-        letter-spacing: 0.22em;
-        text-transform: uppercase;
-        color: #9b6040;
-      }
-
-      h1 {
-        margin: 10px 0 12px;
-        font-size: 34px;
-        line-height: 1;
-      }
-
-      p {
-        margin: 0 0 18px;
-        line-height: 1.6;
-        color: #5c5047;
-      }
-
-      #booom-preview {
-        min-height: 160px;
+        padding: 28px;
+        border: 1px dashed ${colors.rule};
+        border-radius: 12px;
+        color: ${colors.muted};
+        text-align: center;
+        font-size: 14px;
       }
     </style>
   </head>
   <body>
-    <main class="frame">
-      <p class="eyebrow">Host page preview</p>
-      <h1>Testing the live Booom widget</h1>
-      <p>This iframe simulates a plain site that only knows how to paste the script tag.</p>
-      <div id="booom-preview"></div>
-      ${previewSnippet}
+    <nav>
+      <strong>your-site.com</strong>
+      <div><span>Projects</span><span>Writing</span><span>About</span></div>
+    </nav>
+    <main>
+      <h1>Writing</h1>
+      <p class="lede">Notes and longer posts. The list below comes from Booom.</p>
+      ${body}
     </main>
   </body>
 </html>`;
 }
 
-export default function EmbedDemoPage() {
-  const [siteSlug, setSiteSlug] = useState("");
-  const [limitInput, setLimitInput] = useState("5");
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+const subscribeNoop = () => () => {};
 
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    setSiteSlug(normalizeSlug(searchParams.get("site") ?? ""));
-    setLimitInput(searchParams.get("limit") ?? "5");
-    setTheme(searchParams.get("theme") === "dark" ? "dark" : "light");
-  }, []);
+function useOrigin() {
+  return useSyncExternalStore(
+    subscribeNoop,
+    () => window.location.origin,
+    () => "",
+  );
+}
 
-  const origin = typeof window === "undefined" ? "" : window.location.origin;
-  const normalizedSiteSlug = normalizeSlug(siteSlug);
-  const limit = clampLimit(limitInput);
+function Playground() {
+  const searchParams = useSearchParams();
+  const origin = useOrigin();
+  const [siteInput, setSiteInput] = useState(() => normalizeSlug(searchParams.get("site") ?? ""));
+  const [limit, setLimit] = useState<(typeof LIMITS)[number]>(() =>
+    closestLimit(searchParams.get("limit")),
+  );
+  const [theme, setTheme] = useState<Theme>(() =>
+    searchParams.get("theme") === "dark" ? "dark" : "light",
+  );
+  const [viewport, setViewport] = useState<Viewport>("desktop");
+  const [reloadKey, setReloadKey] = useState(0);
+  const [copied, setCopied] = useState(false);
 
-  const snippet = useMemo(() => {
-    if (!origin || !normalizedSiteSlug) {
-      return "";
-    }
+  const siteSlug = normalizeSlug(siteInput);
 
-    return buildSnippet({
-      origin,
-      siteSlug: normalizedSiteSlug,
-      limit,
-      theme,
-    });
-  }, [limit, normalizedSiteSlug, origin, theme]);
+  const snippet = useMemo(
+    () =>
+      origin && siteSlug
+        ? buildSnippet({ origin, siteSlug, limit, theme })
+        : "",
+    [limit, origin, siteSlug, theme],
+  );
 
-  const previewDocument = useMemo(() => {
-    if (!origin || !normalizedSiteSlug) {
-      return buildPreviewDocument("");
-    }
-
-    return buildPreviewDocument(
-      buildSnippet({
-        origin,
-        siteSlug: normalizedSiteSlug,
-        limit,
+  const hostDocument = useMemo(
+    () =>
+      buildHostDocument(
+        origin && siteSlug
+          ? buildSnippet({ origin, siteSlug, limit, theme, target: "#booom-preview" })
+          : "",
         theme,
-        target: "#booom-preview",
-      }),
-    );
-  }, [limit, normalizedSiteSlug, origin, theme]);
+      ),
+    [limit, origin, siteSlug, theme],
+  );
+
+  async function copySnippet() {
+    if (!snippet) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(snippet);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      setCopied(false);
+    }
+  }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-6 py-10 text-stone-900 sm:px-10">
-      <section className="rounded-4xl border border-black/8 bg-[linear-gradient(135deg,rgba(255,248,238,0.96),rgba(248,238,223,0.92))] p-8 shadow-[0_24px_80px_rgba(55,39,27,0.12)] sm:p-10">
-        <p className="text-xs uppercase tracking-[0.3em] text-stone-500">Embed Demo</p>
-        <h1 className="mt-4 max-w-4xl text-4xl font-medium tracking-[-0.05em] text-stone-950 sm:text-6xl">
-          Test the one-line widget against a real hosted Booom site.
-        </h1>
-        <p className="mt-5 max-w-3xl text-base leading-8 text-stone-600 sm:text-lg">
-          This page rebuilds a tiny host document inside an iframe, injects the live
-          <span className="mx-2 inline-flex rounded-md bg-black/6 px-2 py-1 font-mono text-sm text-stone-900">
-            /embed/v1.js
+    <div className="flex min-h-screen flex-col">
+      <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4 sm:px-6">
+        <Link className="flex items-center gap-2 font-semibold" href="/">
+          <span
+            aria-hidden
+            className="flex size-6 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground"
+          >
+            B
           </span>
-          script, and shows exactly what another website would see.
-        </p>
-      </section>
+          Booom
+        </Link>
+        <span aria-hidden className="h-5 w-px bg-border" />
+        <span className="text-sm text-muted-foreground">Embed playground</span>
+      </header>
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-        <article className="rounded-[1.75rem] border border-black/8 bg-white/80 p-6 shadow-[0_12px_40px_rgba(55,39,27,0.08)]">
-          <p className="text-xs uppercase tracking-[0.28em] text-orange-700">Configuration</p>
-          <h2 className="mt-3 text-3xl font-medium tracking-[-0.04em] text-stone-950">
-            Pick a site slug and render options.
-          </h2>
+      <div className="grid flex-1 lg:grid-cols-[22rem_minmax(0,1fr)]">
+        <aside className="space-y-8 border-b px-4 py-8 sm:px-6 lg:border-r lg:border-b-0">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">Embed playground</h1>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+              See how your latest posts look on another website, then copy the script tag.
+            </p>
+          </div>
 
-          <div className="mt-6 grid gap-4">
-            <label className="grid gap-2">
-              <span className="text-sm text-stone-600">Site slug</span>
-              <input
-                className="rounded-2xl border border-black/10 bg-stone-50 px-4 py-3 text-stone-950 outline-none ring-0 transition focus:border-orange-300"
-                onChange={(event) => setSiteSlug(normalizeSlug(event.target.value))}
-                placeholder="my-engineering-blog"
-                value={siteSlug}
-              />
-            </label>
-
-            <label className="grid gap-2">
-              <span className="text-sm text-stone-600">Post limit</span>
-              <input
-                className="rounded-2xl border border-black/10 bg-stone-50 px-4 py-3 text-stone-950 outline-none ring-0 transition focus:border-orange-300"
-                inputMode="numeric"
-                onChange={(event) => setLimitInput(event.target.value)}
-                placeholder="5"
-                value={limitInput}
-              />
-            </label>
-
-            <label className="grid gap-2">
-              <span className="text-sm text-stone-600">Theme</span>
-              <select
-                className="rounded-2xl border border-black/10 bg-stone-50 px-4 py-3 text-stone-950 outline-none ring-0 transition focus:border-orange-300"
+          <div className="space-y-2">
+            <Label htmlFor="site-slug">Blog address</Label>
+            <div className="flex h-9 items-center overflow-hidden rounded-lg border border-input bg-input/30 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
+              <span className="shrink-0 pl-3 font-mono text-xs text-muted-foreground select-none">
+                /b/
+              </span>
+              <Input
+                autoFocus={!siteSlug}
+                className="h-full rounded-none border-0 bg-transparent pl-0.5 font-mono text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
+                id="site-slug"
+                onBlur={() => setSiteInput((current) => normalizeSlug(current))}
                 onChange={(event) =>
-                  setTheme(event.target.value === "dark" ? "dark" : "light")
+                  setSiteInput(event.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, "-"))
                 }
-                value={theme}
-              >
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="mt-6 rounded-3xl border border-black/8 bg-stone-950 p-4 text-stone-50">
-            <p className="text-xs uppercase tracking-[0.24em] text-stone-400">Script snippet</p>
-            <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-all font-mono text-sm leading-7 text-stone-100">
-              {snippet || "<script async src=\"https://your-booom-host/embed/v1.js\" data-site=\"your-site-slug\"></script>"}
-            </pre>
-          </div>
-
-          <div className="mt-6 space-y-3 text-sm leading-7 text-stone-600">
-            <p>Use a site slug that already has published posts in Booom.</p>
-            <p>The preview iframe is intentionally plain so widget issues are easier to spot.</p>
-            <p>For local testing, this page expects the `www` app to be running on the same origin that serves the script and API route.</p>
-          </div>
-        </article>
-
-        <article className="rounded-[1.75rem] border border-black/8 bg-white/80 p-6 shadow-[0_12px_40px_rgba(55,39,27,0.08)]">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.28em] text-orange-700">Live preview</p>
-              <h2 className="mt-3 text-3xl font-medium tracking-[-0.04em] text-stone-950">
-                What another site would render
-              </h2>
+                placeholder="your-blog"
+                spellCheck={false}
+                value={siteInput}
+              />
             </div>
-            {normalizedSiteSlug ? (
-              <a
-                className="rounded-full border border-black/10 bg-stone-50 px-4 py-2 text-sm font-medium text-stone-900 transition hover:-translate-y-0.5"
-                href={`/b/${normalizedSiteSlug}`}
-                rel="noreferrer"
-                target="_blank"
+            <p className="text-xs text-muted-foreground">
+              The part after /b/ in your public blog link.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-x-8 gap-y-6">
+            <div className="space-y-2">
+              <Label>Theme</Label>
+              <Tabs onValueChange={(value) => setTheme(value as Theme)} value={theme}>
+                <TabsList>
+                  <TabsTrigger value="light">Light</TabsTrigger>
+                  <TabsTrigger value="dark">Dark</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            <div className="space-y-2">
+              <Label>Posts to show</Label>
+              <Tabs
+                onValueChange={(value) => setLimit(Number(value) as (typeof LIMITS)[number])}
+                value={String(limit)}
               >
-                Open hosted blog
-              </a>
-            ) : null}
+                <TabsList>
+                  {LIMITS.map((value) => (
+                    <TabsTrigger className="px-2.5 tabular-nums" key={value} value={String(value)}>
+                      {value}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
 
-          <div className="mt-6 overflow-hidden rounded-3xl border border-black/8 bg-[#f5ede0]">
-            <iframe
-              className="min-h-140 w-full border-0 bg-transparent"
-              sandbox="allow-scripts allow-popups"
-              srcDoc={previewDocument}
-              title="Booom embed preview"
-            />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Script tag</Label>
+              <Button disabled={!snippet} onClick={() => void copySnippet()} size="sm">
+                {copied ? <Check data-icon="inline-start" /> : <Copy data-icon="inline-start" />}
+                {copied ? "Copied" : "Copy"}
+              </Button>
+            </div>
+            <pre className="overflow-x-auto rounded-lg border bg-card p-3 font-mono text-xs leading-5 break-all whitespace-pre-wrap text-foreground/90">
+              {snippet || "Add your blog address to generate the script tag."}
+            </pre>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Paste it into your site&apos;s HTML where the list should appear. Only published
+              posts show, and new ones appear automatically.
+            </p>
+          </div>
+        </aside>
+
+        <section className="flex min-w-0 flex-col gap-4 bg-sidebar px-4 py-6 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Tabs onValueChange={(value) => setViewport(value as Viewport)} value={viewport}>
+              <TabsList>
+                <TabsTrigger aria-label="Desktop width" value="desktop">
+                  <Monitor />
+                  <span className="hidden sm:inline">Desktop</span>
+                </TabsTrigger>
+                <TabsTrigger aria-label="Phone width" value="mobile">
+                  <Smartphone />
+                  <span className="hidden sm:inline">Phone</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="flex items-center gap-1">
+              <Button
+                disabled={!siteSlug}
+                onClick={() => setReloadKey((key) => key + 1)}
+                size="sm"
+                variant="ghost"
+              >
+                <RotateCw data-icon="inline-start" />
+                Reload
+              </Button>
+              {siteSlug ? (
+                <Button asChild size="sm" variant="ghost">
+                  <a href={`/b/${siteSlug}`} rel="noreferrer" target="_blank">
+                    Open blog
+                    <ExternalLink data-icon="inline-end" />
+                  </a>
+                </Button>
+              ) : null}
+            </div>
           </div>
 
-          <p className="mt-4 text-sm leading-7 text-stone-600">
-            If the widget is empty, either the site slug does not exist yet or there
-            are no published posts for that site.
-          </p>
-        </article>
-      </section>
-    </main>
+          <div
+            className={`mx-auto flex w-full flex-1 flex-col overflow-hidden rounded-xl border bg-card shadow-2xl shadow-black/30 transition-[max-width] duration-300 motion-reduce:transition-none ${
+              viewport === "mobile" ? "max-w-[390px]" : "max-w-none"
+            }`}
+          >
+            <div className="flex h-10 shrink-0 items-center justify-center border-b px-3">
+              <span className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1 text-xs text-muted-foreground">
+                <Lock className="size-3" />
+                your-site.com/writing
+              </span>
+            </div>
+            {origin ? (
+              <iframe
+                className="min-h-[560px] w-full flex-1 border-0"
+                key={reloadKey}
+                sandbox="allow-scripts allow-popups"
+                srcDoc={hostDocument}
+                title="Preview of the embed on a sample website"
+              />
+            ) : (
+              <div className="min-h-[560px] flex-1" />
+            )}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+export default function EmbedDemoPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <Playground />
+    </Suspense>
   );
 }

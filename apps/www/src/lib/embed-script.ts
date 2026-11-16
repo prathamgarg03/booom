@@ -4,112 +4,138 @@ const embedCss = `
 }
 
 .booom-root {
-  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #201c1a;
+  --booom-bg: #ffffff;
+  --booom-ink: #1d1c1a;
+  --booom-muted: #6f6c66;
+  --booom-rule: #e7e5e1;
+  --booom-hover: #f6f5f2;
   display: block;
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--booom-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.booom-root[data-theme="dark"] {
+  --booom-bg: #1b1b1a;
+  --booom-ink: #ecebe7;
+  --booom-muted: #9a978f;
+  --booom-rule: #2f2e2b;
+  --booom-hover: #232321;
 }
 
 .booom-card {
-  border: 1px solid rgba(19, 18, 17, 0.12);
-  border-radius: 18px;
-  background: linear-gradient(180deg, #fffaf2 0%, #f5ecdd 100%);
-  padding: 18px;
-  box-shadow: 0 10px 30px rgba(54, 35, 18, 0.08);
+  background: var(--booom-bg);
+  border: 1px solid var(--booom-rule);
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-.booom-root[data-theme="dark"] .booom-card {
-  background: linear-gradient(180deg, #151515 0%, #1e1d1a 100%);
-  border-color: rgba(255, 255, 255, 0.08);
-  color: #f6f0e4;
+.booom-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px 12px;
 }
 
-.booom-kicker {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.24em;
-  color: #8b6d5c;
-  margin: 0 0 14px;
+.booom-site {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--booom-ink);
 }
 
-.booom-root[data-theme="dark"] .booom-kicker {
-  color: #d3a98d;
+.booom-link,
+.booom-badge {
+  color: var(--booom-muted);
+  text-decoration: none;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.booom-link:hover,
+.booom-badge:hover {
+  color: var(--booom-ink);
 }
 
 .booom-list {
-  display: grid;
-  gap: 12px;
+  display: block;
 }
 
 .booom-item {
   display: block;
-  text-decoration: none;
+  padding: 14px 20px;
+  border-top: 1px solid var(--booom-rule);
   color: inherit;
-  padding: 14px 0;
-  border-top: 1px solid rgba(19, 18, 17, 0.08);
+  text-decoration: none;
+  transition: background-color 120ms ease;
 }
 
-.booom-item:first-child {
-  border-top: 0;
-  padding-top: 0;
+.booom-item:hover {
+  background: var(--booom-hover);
+}
+
+.booom-item:focus-visible {
+  outline: 2px solid var(--booom-ink);
+  outline-offset: -2px;
 }
 
 .booom-title {
   display: block;
-  font-size: 18px;
-  line-height: 1.3;
+  font-size: 16px;
   font-weight: 600;
-  color: inherit;
+  line-height: 1.35;
+  color: var(--booom-ink);
+}
+
+.booom-item:hover .booom-title {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
 }
 
 .booom-meta {
   display: block;
-  margin-top: 7px;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #b04e18;
-}
-
-.booom-root[data-theme="dark"] .booom-meta {
-  color: #f4a36f;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--booom-muted);
 }
 
 .booom-excerpt {
-  display: block;
-  margin-top: 10px;
+  display: -webkit-box;
+  margin-top: 6px;
   font-size: 14px;
   line-height: 1.55;
-  color: #5e5146;
-}
-
-.booom-root[data-theme="dark"] .booom-excerpt {
-  color: #c7bcab;
+  color: var(--booom-muted);
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .booom-footer {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(19, 18, 17, 0.08);
+  justify-content: flex-end;
+  padding: 10px 20px;
+  border-top: 1px solid var(--booom-rule);
+}
+
+.booom-badge {
   font-size: 12px;
 }
 
-.booom-badge,
-.booom-link {
-  color: inherit;
-  text-decoration: none;
-}
-
 .booom-status {
+  margin: 0;
+  padding: 18px 20px;
   font-size: 14px;
-  line-height: 1.5;
-  color: #5e5146;
+  color: var(--booom-muted);
 }
 
-.booom-root[data-theme="dark"] .booom-status {
-  color: #c7bcab;
+@media (prefers-reduced-motion: reduce) {
+  .booom-item {
+    transition: none;
+  }
 }
 `;
 
@@ -169,7 +195,7 @@ export function getEmbedScript() {
     root.appendChild(style);
     var wrapper = document.createElement("div");
     wrapper.className = "booom-root";
-    wrapper.dataset.theme = root.host && root.host.dataset ? root.host.dataset.theme || "light" : "light";
+    wrapper.setAttribute("data-theme", root.host && root.host.dataset ? root.host.dataset.theme || "light" : "light");
     wrapper.innerHTML = html;
     root.appendChild(wrapper);
   }
@@ -198,12 +224,12 @@ export function getEmbedScript() {
   var site = normalizeSite(script.dataset.site);
 
   if (!site) {
-    render(root, '<div class="booom-card"><p class="booom-kicker">Booom Embed</p><p class="booom-status">The embed is missing a valid data-site slug.</p></div>');
+    render(root, '<div class="booom-card"><p class="booom-status">This embed needs a valid data-site attribute.</p></div>');
     console.error("Booom embed requires a valid data-site slug");
     return;
   }
 
-  render(root, '<div class="booom-card"><p class="booom-kicker">Booom Embed</p><p class="booom-status">Loading posts...</p></div>');
+  render(root, '<div class="booom-card"><p class="booom-status">Loading posts…</p></div>');
 
   fetch(origin + "/api/embed/" + encodeURIComponent(site) + "?limit=" + encodeURIComponent(String(limit)), {
     method: "GET",
@@ -223,17 +249,17 @@ export function getEmbedScript() {
     })
     .then(function (payload) {
       if (payload && payload.__booomState === "invalid") {
-        render(root, '<div class="booom-card"><p class="booom-kicker">Booom Embed</p><p class="booom-status">This embed has an invalid site configuration.</p></div>');
+        render(root, '<div class="booom-card"><p class="booom-status">This embed has an invalid data-site attribute.</p></div>');
         return;
       }
 
       if (payload && payload.__booomState === "missing") {
-        render(root, '<div class="booom-card"><p class="booom-kicker">Booom Embed</p><p class="booom-status">This blog could not be found.</p></div>');
+        render(root, '<div class="booom-card"><p class="booom-status">No blog exists at this address.</p></div>');
         return;
       }
 
       if (!payload || !payload.site) {
-        render(root, '<div class="booom-card"><p class="booom-kicker">Booom Embed</p><p class="booom-status">This blog could not be found.</p></div>');
+        render(root, '<div class="booom-card"><p class="booom-status">No blog exists at this address.</p></div>');
         return;
       }
 
@@ -247,20 +273,22 @@ export function getEmbedScript() {
         ].join("");
       }).join("");
 
-      var content = items || '<p class="booom-status">No published posts yet.</p>';
+      var content = items || '<p class="booom-status" style="border-top:1px solid var(--booom-rule)">No posts published yet.</p>';
       render(root, [
         '<div class="booom-card">',
-        '<p class="booom-kicker">' + escapeHtml(payload.site.name) + "</p>",
+        '<div class="booom-header">',
+        '<p class="booom-site">' + escapeHtml(payload.site.name) + "</p>",
+        '<a class="booom-link" href="' + escapeHtml(payload.site.url) + '" target="_blank" rel="noopener noreferrer">All posts</a>',
+        "</div>",
         '<div class="booom-list">' + content + "</div>",
         '<div class="booom-footer">',
-        '<a class="booom-link" href="' + escapeHtml(payload.site.url) + '" target="_blank" rel="noopener noreferrer">Open blog</a>',
-        '<a class="booom-badge" href="' + escapeHtml(origin) + '" target="_blank" rel="noopener noreferrer">Powered by Booom</a>',
+        '<a class="booom-badge" href="' + escapeHtml(origin) + '" target="_blank" rel="noopener noreferrer">Published with Booom</a>',
         "</div>",
         "</div>"
       ].join(""));
     })
     .catch(function () {
-      render(root, '<div class="booom-card"><p class="booom-kicker">Booom Embed</p><p class="booom-status">We could not load this blog right now.</p></div>');
+      render(root, '<div class="booom-card"><p class="booom-status">Posts couldn’t load. Refresh the page to try again.</p></div>');
     });
 })();`;
 }
