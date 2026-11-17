@@ -12,6 +12,8 @@ import App from "./App";
 import { Toaster } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { studioEnv } from "./lib/env";
+import { initPostHog } from "./lib/posthog";
+import { PostHogIdentify } from "./components/posthog-identify";
 
 const convex = new ConvexReactClient(studioEnv.VITE_CONVEX_URL);
 
@@ -20,10 +22,12 @@ function applyDocumentShell() {
 }
 
 applyDocumentShell();
+initPostHog();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ClerkProvider publishableKey={studioEnv.VITE_CLERK_PUBLISHABLE_KEY}>
+      <PostHogIdentify />
       <TooltipProvider>
         <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
           <App />

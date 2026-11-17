@@ -2,12 +2,25 @@
   "redirects": [
     {
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": "booom-studio.vercel.app" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "booom-studio.vercel.app"
+        }
+      ],
       "destination": "https://studio.booom.dev/$1",
       "permanent": true
     }
   ],
   "rewrites": [
+    {
+      "source": "/ingest/static/(.*)",
+      "destination": "https://us-assets.i.posthog.com/static/$1"
+    },
+    {
+      "source": "/ingest/(.*)",
+      "destination": "https://us.i.posthog.com/$1"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

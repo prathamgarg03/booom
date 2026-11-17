@@ -1,6 +1,21 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // PostHog reverse proxy: keeps analytics working when ad-blockers block *.posthog.com.
+  async rewrites() {
+    return [
+      {
+        source: "/ingest/static/:path*",
+        destination: "https://us-assets.i.posthog.com/static/:path*",
+      },
+      {
+        source: "/ingest/:path*",
+        destination: "https://us.i.posthog.com/:path*",
+      },
+    ];
+  },
+  // Required so PostHog API calls with trailing slashes aren't redirected.
+  skipTrailingSlashRedirect: true,
   async redirects() {
     return [
       {
