@@ -64,6 +64,15 @@ export const api = {
       Id<"sites">
     >("sites:create"),
     listMine: queryRef<{}, SiteRecord[]>("sites:listMine"),
+    update: mutationRef<
+      {
+        siteId: Id<"sites">;
+        name: string;
+        slug: string;
+        description?: string;
+      },
+      Id<"sites">
+    >("sites:update"),
   },
   posts: {
     createDraft: mutationRef<

@@ -27,6 +27,8 @@ export function DashboardHeader({ site, posts, onActionsMount }: DashboardHeader
 
   if (!site) {
     crumbs.push({ label: "Set up your blog" });
+  } else if (pathname === "/dashboard/settings") {
+    crumbs.push({ label: "Blog settings" });
   } else if (pathname === "/dashboard/embed") {
     crumbs.push({ label: "Embed" });
   } else if (pathname === "/dashboard/posts/new") {

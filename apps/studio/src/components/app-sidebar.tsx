@@ -7,6 +7,7 @@ import {
   FileText,
   LogOut,
   Plus,
+  Settings,
   UserRound,
 } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
@@ -103,6 +104,12 @@ export function AppSidebar({ workspace }: AppSidebarProps) {
                     <Copy />
                     Copy blog link
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard/settings">
+                      <Settings />
+                      Blog settings
+                    </Link>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
@@ -171,6 +178,18 @@ export function AppSidebar({ workspace }: AppSidebarProps) {
                     <NavLink to="/dashboard/embed">
                       <Code2 />
                       <span>Embed on your site</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === "/dashboard/settings"}
+                    tooltip="Blog settings"
+                  >
+                    <NavLink to="/dashboard/settings">
+                      <Settings />
+                      <span>Blog settings</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

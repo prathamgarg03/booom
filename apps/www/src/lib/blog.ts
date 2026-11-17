@@ -48,3 +48,11 @@ export function readingMinutes(markdown: string) {
   const words = markdown.trim() ? markdown.trim().split(/\s+/).length : 0;
   return Math.max(1, Math.round(words / 230));
 }
+
+export async function getSitemapEntries() {
+  const env = getWwwEnv();
+
+  return await fetchQuery(api.public.sitemapEntries, {}, {
+    url: env.NEXT_PUBLIC_CONVEX_URL,
+  });
+}

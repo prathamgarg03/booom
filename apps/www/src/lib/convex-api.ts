@@ -34,6 +34,11 @@ export type BlogPostResult = {
   };
 } | null;
 
+export type SitemapEntries = {
+  sites: { slug: string; updatedAt: number }[];
+  posts: { siteSlug: string; slug: string; updatedAt: number }[];
+};
+
 function queryRef<Args extends Record<string, unknown>, ReturnType>(name: string) {
   return makeFunctionReference<"query", Args, ReturnType>(name);
 }
@@ -45,5 +50,6 @@ export const api = {
       { siteSlug: string; postSlug: string },
       BlogPostResult
     >("public:blogPost"),
+    sitemapEntries: queryRef<Record<string, never>, SitemapEntries>("public:sitemapEntries"),
   },
 };

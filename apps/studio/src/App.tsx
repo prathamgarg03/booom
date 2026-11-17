@@ -4,6 +4,7 @@ import { LoadingPanel } from "./components/loading-panel";
 import { HomePage } from "./components/home";
 import { DashboardEditorRoute } from "./routes/dashboard-editor-route";
 import { DashboardEmbedRoute } from "./routes/dashboard-embed-route";
+import { DashboardSettingsRoute } from "./routes/dashboard-settings-route";
 import { DashboardIndexRoute } from "./routes/dashboard-index-route";
 import { DashboardLayout } from "./routes/dashboard-layout";
 
@@ -48,6 +49,7 @@ export default function App() {
           <Route element={<DashboardRouteGate />} path="/dashboard">
             <Route element={<DashboardIndexRoute />} index />
             <Route element={<DashboardEmbedRoute />} path="embed" />
+            <Route element={<DashboardSettingsRoute />} path="settings" />
             <Route
               element={<DashboardEditorRoute mode="new" />}
               path="posts/new"

@@ -23,6 +23,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: data.site.name,
     description: data.site.description || `Writing from ${data.site.name}.`,
+    alternates: {
+      canonical: `/b/${data.site.slug}`,
+      types: { "application/rss+xml": `/b/${data.site.slug}/rss.xml` },
+    },
   };
 }
 
@@ -85,7 +89,14 @@ export default async function BlogIndexPage({ params }: PageProps) {
       </section>
 
       <BlogFooter>
-        {data.posts.length} {data.posts.length === 1 ? "post" : "posts"}
+        <span className="flex gap-5">
+          <span>
+            {data.posts.length} {data.posts.length === 1 ? "post" : "posts"}
+          </span>
+          <a className="transition-colors hover:text-ink" href={`/b/${data.site.slug}/rss.xml`}>
+            RSS
+          </a>
+        </span>
       </BlogFooter>
     </main>
   );

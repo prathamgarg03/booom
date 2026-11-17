@@ -24,6 +24,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `${data.post.title} | ${data.site.name}`,
     description: data.post.excerpt || data.site.description || data.post.title,
+    alternates: {
+      canonical: `/b/${data.site.slug}/${data.post.slug}`,
+      types: { "application/rss+xml": `/b/${data.site.slug}/rss.xml` },
+    },
+    openGraph: {
+      type: "article",
+      title: data.post.title,
+      description: data.post.excerpt || undefined,
+      publishedTime: data.post.publishedAt
+        ? new Date(data.post.publishedAt).toISOString()
+        : undefined,
+      siteName: data.site.name,
+    },
   };
 }
 

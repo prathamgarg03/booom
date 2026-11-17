@@ -77,3 +77,23 @@ export const blogPost = query({
     };
   },
 });
+
+export const sitemapEntries = query({
+  args: {},
+  handler: async (ctx) => {
+    const sites = await ctx.db.query("sites").collect();
+    const posts = await ctx.db.query("posts").collect();
+    const siteById = new Map(sites.map((site) => [site._id, site]));
+
+    return {
+      sites: sites.map((site) => ({ slug: site.slug, updatedAt: site.updatedAt })),
+      posts: posts
+        .filter((post) => post.status === "published" && siteById.has(post.siteId))
+        .map((post) => ({
+          siteSlug: siteById.get(post.siteId)!.slug,
+          slug: post.slug,
+          updatedAt: post.updatedAt,
+        })),
+    };
+  },
+});
