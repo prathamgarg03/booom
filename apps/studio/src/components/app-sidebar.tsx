@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import type { StudioWorkspaceContext } from "../hooks/use-studio-workspace";
+import { Logo } from "./logo";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -114,7 +115,9 @@ export function AppSidebar({ workspace }: AppSidebarProps) {
               </DropdownMenu>
             ) : (
               <SidebarMenuButton size="lg">
-                <Monogram label="Booom" />
+                <span className="flex size-8 shrink-0 items-center justify-center">
+                  <Logo className="h-6 w-auto text-primary" />
+                </span>
                 <span className="truncate text-sm font-medium">Booom Studio</span>
               </SidebarMenuButton>
             )}

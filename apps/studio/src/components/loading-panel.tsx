@@ -1,3 +1,5 @@
+import { Logo } from "./logo";
+
 export function LoadingPanel() {
   return (
     <div
@@ -5,9 +7,7 @@ export function LoadingPanel() {
       aria-label="Loading Booom Studio"
       className="flex min-h-svh items-center justify-center"
     >
-      <span className="flex size-10 animate-pulse items-center justify-center rounded-lg bg-primary font-serif text-xl font-semibold text-primary-foreground">
-        B
-      </span>
+      <Logo className="h-10 w-auto animate-pulse text-primary" />
     </div>
   );
 }

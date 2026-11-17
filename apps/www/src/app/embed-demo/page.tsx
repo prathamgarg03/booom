@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Logo } from "@/components/logo";
 
 const LIMITS = [3, 5, 8, 12] as const;
 type Theme = "light" | "dark";
@@ -190,12 +191,7 @@ function Playground() {
     <div className="flex min-h-screen flex-col">
       <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4 sm:px-6">
         <Link className="flex items-center gap-2 font-semibold" href="/">
-          <span
-            aria-hidden
-            className="flex size-6 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground"
-          >
-            B
-          </span>
+          <Logo className="h-6 w-auto text-primary" />
           Booom
         </Link>
         <span aria-hidden className="h-5 w-px bg-border" />
