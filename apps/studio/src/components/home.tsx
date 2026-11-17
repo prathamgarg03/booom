@@ -10,7 +10,7 @@ export function HomePage() {
         <header className="py-6 flex items-center justify-between mx-2">
           <span className="text-2xl font-extrabold tracking-tight">Booom</span>
           <nav className="flex flex-wrap gap-6 text-sm font-medium text-muted-foreground">
-            <a className="hover:text-foreground transition-colors" href="/embed-demo">Docs</a>
+            <a className="hover:text-foreground transition-colors" href="https://booom.dev/embed-demo">Docs</a>
             <a className="hover:text-foreground transition-colors" href="https://booom.dev">Home</a>
           </nav>
         </header>

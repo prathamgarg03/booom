@@ -1,6 +1,13 @@
 import type { BlogIndexResult } from "@/lib/convex-api";
 
 export const DEFAULT_EMBED_LIMIT = 5;
+export const CANONICAL_ORIGIN = "https://booom.dev";
+const legacyHosts = new Set(["booom-www.vercel.app", "www.booom.dev"]);
+
+/** Links handed to embeds always point at booom.dev, even when the script was loaded from an old address. */
+export function getCanonicalOrigin(requestUrl: URL) {
+  return legacyHosts.has(requestUrl.hostname) ? CANONICAL_ORIGIN : requestUrl.origin;
+}
 export const MAX_EMBED_LIMIT = 12;
 const siteSlugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 

@@ -73,7 +73,7 @@ export function getPublicAppUrl(explicitUrl?: string) {
   }
 
   if (hostname.startsWith("studio.")) {
-    return `${protocol}//www.${hostname.slice("studio.".length)}`;
+    return `${protocol}//${hostname.slice("studio.".length)}`;
   }
 
   return origin.replace(/\/$/, "");

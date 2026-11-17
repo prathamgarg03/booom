@@ -16,6 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://booom.dev"),
   title: "Booom",
   description: "Dev-first embeddable blog platform. Paste-once distribution.",
 };

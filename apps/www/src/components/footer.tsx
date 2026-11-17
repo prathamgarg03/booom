@@ -9,9 +9,8 @@ export function Footer() {
           <span className="text-xs border border-border/60 rounded px-1.5 py-0.5">OSS</span>
         </div>
         <div className="flex gap-6 text-xs">
-          <a href="https://github.com" className="hover:text-foreground transition-colors">GitHub</a>
-          <a href="/privacy" className="hover:text-foreground transition-colors">Privacy</a>
-          <a href="/terms" className="hover:text-foreground transition-colors">Terms</a>
+          <a href="https://studio.booom.dev" className="hover:text-foreground transition-colors">Studio</a>
+          <a href="/embed-demo" className="hover:text-foreground transition-colors">Embed playground</a>
         </div>
       </div>
     </footer>

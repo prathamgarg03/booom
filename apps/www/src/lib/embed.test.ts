@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   buildEmbedPayload,
   DEFAULT_EMBED_LIMIT,
+  getCanonicalOrigin,
   MAX_EMBED_LIMIT,
   normalizeEmbedSiteSlug,
   parseEmbedLimit,
@@ -34,11 +35,11 @@ test("buildEmbedPayload preserves empty published results for known sites", () =
       },
       posts: [],
     },
-    "https://booom-www.vercel.app",
+    "https://booom.dev",
     5,
   );
 
-  assert.equal(payload.site.url, "https://booom-www.vercel.app/b/prathamgarg-com");
+  assert.equal(payload.site.url, "https://booom.dev/b/prathamgarg-com");
   assert.deepEqual(payload.posts, []);
 });
 
@@ -67,10 +68,17 @@ test("buildEmbedPayload limits posts and builds canonical urls", () => {
         },
       ],
     },
-    "https://booom-www.vercel.app",
+    "https://booom.dev",
     1,
   );
 
   assert.equal(payload.posts.length, 1);
-  assert.equal(payload.posts[0]?.url, "https://booom-www.vercel.app/b/prathamgarg-com/first-blog");
+  assert.equal(payload.posts[0]?.url, "https://booom.dev/b/prathamgarg-com/first-blog");
+});
+
+test("getCanonicalOrigin maps old hosts to booom.dev and keeps others", () => {
+  assert.equal(getCanonicalOrigin(new URL("https://booom-www.vercel.app/api/embed/x")), "https://booom.dev");
+  assert.equal(getCanonicalOrigin(new URL("https://www.booom.dev/api/embed/x")), "https://booom.dev");
+  assert.equal(getCanonicalOrigin(new URL("https://booom.dev/api/embed/x")), "https://booom.dev");
+  assert.equal(getCanonicalOrigin(new URL("http://localhost:3001/api/embed/x")), "http://localhost:3001");
 });

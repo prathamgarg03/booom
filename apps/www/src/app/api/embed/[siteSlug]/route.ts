@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getBlogIndex } from "@/lib/blog";
 import {
   buildEmbedPayload,
+  getCanonicalOrigin,
   getEmbedCorsHeaders,
   normalizeEmbedSiteSlug,
   parseEmbedLimit,
@@ -48,7 +49,7 @@ export async function GET(request: Request, { params }: RouteProps) {
     );
   }
 
-  return NextResponse.json(buildEmbedPayload(data, url.origin, limit), {
+  return NextResponse.json(buildEmbedPayload(data, getCanonicalOrigin(url), limit), {
     headers: getEmbedCorsHeaders(),
   });
 }

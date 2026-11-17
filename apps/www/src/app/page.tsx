@@ -14,7 +14,7 @@ export default function Home() {
           <span className="text-2xl font-extrabold tracking-tight">Booom</span>
           <nav className="flex flex-wrap gap-6 text-sm font-medium text-muted-foreground">
             <a className="hover:text-foreground transition-colors" href="/embed-demo">Docs</a>
-            <a className="hover:text-foreground transition-colors" href="https://booom-studio.vercel.app">Studio</a>
+            <a className="hover:text-foreground transition-colors" href="https://studio.booom.dev">Studio</a>
           </nav>
         </header>
 
@@ -33,7 +33,7 @@ export default function Home() {
 
             <div className="mt-12 flex flex-wrap gap-4">
               <Button className="py-6 px-8 text-base font-semibold shadow-xl shadow-primary/20 transition-all hover:-translate-y-1" variant="default" asChild>
-                <a href="https://booom-studio.vercel.app">Start for Free</a>
+                <a href="https://studio.booom.dev">Start for Free</a>
               </Button>
               <Button className="py-6 px-8 text-base font-semibold transition-all hover:-translate-y-1" variant="secondary" asChild>
                 <Link href="/b/prathamgarg-com">Live Demo</Link>
